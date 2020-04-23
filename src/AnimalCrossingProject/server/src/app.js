@@ -3,11 +3,15 @@ import path from 'path';
 import logger from 'morgan';
 import bodyParser from 'body-parser';
 import routes from './routes';
+import userRoute from './users';
+import cors from 'cors';
 
 const app = express();
 app.disable('x-powered-by');
 
 // View engine setup
+app.use(cors());
+
 app.set('views', path.join(__dirname, '../views'));
 app.set('view engine', 'pug');
 
@@ -20,6 +24,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/', routes);
+app.use('/api/v1/users', userRoute);
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {
