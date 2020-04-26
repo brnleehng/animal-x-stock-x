@@ -2,9 +2,20 @@ import express from 'express';
 import path from 'path';
 import logger from 'morgan';
 import bodyParser from 'body-parser';
-import routes from './routes';
-import userRoute from './users';
+
+import userRoute from './routes/users';
+import itemRoute from './routes/items';
+import tradeRoute from './routes/trades';
+
 import cors from 'cors';
+
+import { Promise, connect } from "mongoose";
+
+Promise = global.Promise;
+
+connect('mongodb://localhost:27017', { dbName: "stalkx" })
+  .then(() =>  console.log('connection succesful'))
+  .catch((err) => console.error(err));
 
 const app = express();
 app.disable('x-powered-by');
@@ -23,8 +34,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
-app.use('/', routes);
-app.use('/api/v1/users', userRoute);
+app.use('/', itemRoute);
+app.use('/', tradeRoute);
+app.use('/', userRoute);
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {
