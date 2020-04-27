@@ -386,3 +386,68 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
         res.redirect("/forgot");
     });
 };
+
+/**
+ * GET /api/v1/accounts
+ * List accounts in service.
+ */
+export const listAccounts = (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+        return res.redirect("/");
+    }
+    res.render("account/forgot", {
+        title: "Forgot Password"
+    });
+};
+
+/**
+ * POST /api/v1/accounts/:id
+ * Create account in service.
+ */
+export const createAccount = (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+        return res.redirect("/");
+    }
+    res.render("account/forgot", {
+        title: "Forgot Password"
+    });
+};
+
+/**
+ * PUT /api/v1/accounts/:id
+ * Update account in service.
+ */
+export const updateAccount = (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+        return res.redirect("/");
+    }
+    res.render("account/forgot", {
+        title: "Forgot Password"
+    });
+};
+
+/**
+ * DELETE /api/v1/accounts/:id
+ * Delete account in service.
+ */
+export const deleteAccount = (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+        return res.redirect("/");
+    }
+    res.render("account/forgot", {
+        title: "Forgot Password"
+    });
+};
+
+/**
+ * GET /api/v1/accounts/:id
+ * Get account via API
+ */
+export const getAccountProfile = (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+        return res.redirect("/");
+    }
+    res.render("account/forgot", {
+        title: "Forgot Password"
+    });
+};

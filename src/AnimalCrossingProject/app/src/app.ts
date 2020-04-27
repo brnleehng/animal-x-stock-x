@@ -19,6 +19,8 @@ import * as userController from "./controllers/user";
 import * as apiController from "./controllers/api";
 import * as contactController from "./controllers/contact";
 
+import * as itemController from "./controllers/item";
+import * as tradeController from "./controllers/trade";
 
 // API keys and Passport configuration
 import * as passportConfig from "./config/passport";
@@ -31,7 +33,7 @@ const mongoUrl = MONGODB_URI;
 mongoose.Promise = bluebird;
 
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
-    () => { /** ready to use. The `mongoose.connect()` promise resolves to undefined. */ },
+    () => { console.log("StalkX Mongoos DB Connection Successful"); },
 ).catch(err => {
     console.log("MongoDB connection error. Please make sure MongoDB is running. " + err);
     // process.exit();
@@ -101,6 +103,55 @@ app.post("/account/profile", passportConfig.isAuthenticated, userController.post
 app.post("/account/password", passportConfig.isAuthenticated, userController.postUpdatePassword);
 app.post("/account/delete", passportConfig.isAuthenticated, userController.postDeleteAccount);
 app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userController.getOauthUnlink);
+
+// Item Operations
+app.get("/api/v1/items", itemController.listItems);
+app.post("/api/v1/items", itemController.createItem);
+app.get("/api/v1/items/:id", itemController.getItem);
+app.put("/api/v1/items/:id", itemController.updateItem);
+app.delete("/api/v1/items/:id", itemController.deleteItem);
+
+// Bid Operations
+app.get("/api/v1/items/:id/bids", itemController.getItem);
+app.post("/api/v1/items/:id/bids/:bidId", itemController.placeBid);
+app.get("/api/v1/items/:id/bids/:bidId", itemController.getBid);
+app.put("/api/v1/items/:id/bids/:bidId", itemController.updateBid);
+app.delete("/api/v1/items/:id/bids/:bidId", itemController.deleteBid);
+
+// Ask Operations
+app.get("/api/v1/items/:id/asks", itemController.getItem);
+app.post("/api/v1/items/:id/asks", itemController.placeAsk);
+app.get("/api/v1/items/:id/asks/:askId", itemController.getAsk);
+app.put("/api/v1/items/:id/asks/:askId", itemController.updateAsk);
+app.delete("/api/v1/items/:id/asks/:askId", itemController.deleteAsk);
+
+// Trade Operations
+app.get("/api/v1/trades", tradeController.listTrades);
+app.post("/api/v1/trades/:id", tradeController.createTrade);
+app.get("/api/v1/trades/:id", tradeController.getTrade);
+app.put("/api/v1/trades/:id", tradeController.updateTrade);
+app.delete("/api/v1/trades/:id", tradeController.deleteTrade);
+
+// User Operations
+app.get("/api/v1/accounts", userController.listAccounts);
+app.post("/api/v1/accounts", userController.createAccount);
+app.get("/api/v1/accounts/:id", userController.getAccountProfile);
+app.delete("/api/v1/accounts/:id", userController.deleteAccount);
+app.put("/api/v1/accounts/:id", userController.updateAccount);
+
+// Account - Bid Operations
+app.get("/api/v1/accounts/:id/bids", itemController.getItem);
+app.post("/api/v1/accounts/:id/bids/:bidId", itemController.placeBid);
+app.get("/api/v1/accounts/:id/bids/:bidId", itemController.getBid);
+app.put("/api/v1/accounts/:id/bids/:bidId", itemController.updateBid);
+app.delete("/api/v1/accounts/:id/bids/:bidId", itemController.deleteBid);
+
+// Account - Ask Operations
+app.get("/api/v1/accounts/:id/asks", itemController.getItem);
+app.post("/api/v1/accounts/:id/asks", itemController.placeAsk);
+app.get("/api/v1/accounts/:id/asks/:askId", itemController.getAsk);
+app.put("/api/v1/accounts/:id/asks/:askId", itemController.updateAsk);
+app.delete("/api/v1/accounts/:id/asks/:askId", itemController.deleteAsk);
 
 /**
  * API examples routes.

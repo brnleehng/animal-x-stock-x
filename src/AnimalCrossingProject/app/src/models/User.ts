@@ -1,6 +1,9 @@
 import bcrypt from "bcrypt-nodejs";
 import crypto from "crypto";
 import mongoose from "mongoose";
+import { Bid, BidDocument } from "./Bid";
+import { Ask, AskDocument } from "./Ask";
+import { Item, ItemDocument } from "./Item";
 
 export type UserDocument = mongoose.Document & {
     email: string;
@@ -8,6 +11,18 @@ export type UserDocument = mongoose.Document & {
     passwordResetToken: string;
     passwordResetExpires: Date;
 
+    username: string;
+    nintendoSwitchCode: string;
+    preferredTimezone: string;
+    islandName: string;
+    state: string; 
+    trades: string[];
+    createdTime: Date;
+
+    inventory: ItemDocument[];
+    bids: BidDocument[];
+    asks: AskDocument[];
+   
     facebook: string;
     tokens: AuthToken[];
 
@@ -35,6 +50,27 @@ const userSchema = new mongoose.Schema({
     password: String,
     passwordResetToken: String,
     passwordResetExpires: Date,
+
+    username: { type: String, unique: true},
+    nintendoSwitchCode: String,
+    preferredTimezone: String,
+    islandName: String,
+    state: String, 
+    trades: [String],
+    createdTime: Date,
+
+    inventory: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "item"
+    }],
+    bids: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "bid"
+    }],
+    asks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ask"
+    }],
 
     facebook: String,
     twitter: String,
