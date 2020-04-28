@@ -107,11 +107,11 @@ export const placeBid = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let bidId = req.params.bidId;
-            let bids = item.bids.filter(x => x.order.id === bidId);
+            const bidId = req.params.bidId;
+            const bids = item.bids.filter(x => x.order.id === bidId);
             
             item.save((err: WriteError, product: ItemDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });
@@ -125,8 +125,8 @@ export const getBid = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let bidId = req.params.bidId;
-            let bid = item.bids.filter(x => x.order.id === bidId)[0];
+            const bidId = req.params.bidId;
+            const bid = item.bids.filter(x => x.order.id === bidId)[0];
             
             res.json(bid);
         });
@@ -140,11 +140,11 @@ export const deleteBid = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let bidId = req.params.bidId;
+            const bidId = req.params.bidId;
             item.bids = item.bids.filter(x => x.order.id !== bidId);
 
             item.save((err: WriteError, product: ItemDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });
@@ -158,11 +158,11 @@ export const updateBid = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let bidId = req.params.bidId;
+            const bidId = req.params.bidId;
             item.bids = item.bids.filter(x => x.order.id !== bidId);
             
             item.save((err: WriteError, product: ItemDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });
@@ -176,11 +176,11 @@ export const placeAsk = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let askId = req.params.askId;
-            let asks = item.asks.filter(x => x.order.id === askId);
+            const askId = req.params.askId;
+            const asks = item.asks.filter(x => x.order.id === askId);
             
             item.save((err: WriteError, product: ItemDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });
@@ -195,8 +195,8 @@ export const getAsk = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let askId = req.params.askId;
-            let ask = item.asks.filter(x => x.order.id === askId)[0];
+            const askId = req.params.askId;
+            const ask = item.asks.filter(x => x.order.id === askId)[0];
             
             res.json(ask);
         });
@@ -210,11 +210,11 @@ export const deleteAsk = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let askId = req.params.askId;
+            const askId = req.params.askId;
             item.asks = item.asks.filter(x => x.order.id !== askId);
             
             item.save((err: WriteError, product: ItemDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });
@@ -228,11 +228,11 @@ export const updateAsk = (req: Request, res: Response) => {
     Item
         .findOne({ id: req.params.id })
         .exec((err, item: ItemDocument) => {
-            let askId = req.params.askId;
-            let asks = item.asks.filter(x => x.order.id === askId);
+            const askId = req.params.askId;
+            const asks = item.asks.filter(x => x.order.id === askId);
             
             item.save((err: WriteError, product: ItemDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });

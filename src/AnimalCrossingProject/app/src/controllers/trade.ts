@@ -66,7 +66,7 @@ export const updateTrade = (req: Request, res: Response) => {
             trade.seller = req.body.seller;
 
             trade.save((err: WriteError, product: TradeDocument) => {
-                console.log('Trade Save Error: ', err);
+                console.log("Trade Save Error: ", err);
                 res.json(product);
             });
         });
