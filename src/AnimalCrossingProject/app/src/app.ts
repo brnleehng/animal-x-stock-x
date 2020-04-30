@@ -113,10 +113,6 @@ app.delete("/api/v1/items/:id", itemController.deleteItem);
 
 // Bid Operations
 app.get("/api/v1/items/:id/bids", itemController.getItem);
-app.post("/api/v1/items/:id/bids/:bidId", itemController.placeBid);
-app.get("/api/v1/items/:id/bids/:bidId", itemController.getBid);
-app.put("/api/v1/items/:id/bids/:bidId", itemController.updateBid);
-app.delete("/api/v1/items/:id/bids/:bidId", itemController.deleteBid);
 
 // Ask Operations
 app.get("/api/v1/items/:id/asks", itemController.getItem);
@@ -141,10 +137,10 @@ app.put("/api/v1/accounts/:id", userController.updateAccount);
 
 // Account - Bid Operations
 app.get("/api/v1/accounts/:id/bids", itemController.getItem);
-app.post("/api/v1/accounts/:id/bids/:bidId", itemController.placeBid);
-app.get("/api/v1/accounts/:id/bids/:bidId", itemController.getBid);
-app.put("/api/v1/accounts/:id/bids/:bidId", itemController.updateBid);
-app.delete("/api/v1/accounts/:id/bids/:bidId", itemController.deleteBid);
+app.post("/api/v1/accounts/:accountId/items/:itemId", userController.placeBid);
+app.get("/api/v1/accounts/:accountId/items/:itemId/bids/:bidId", userController.getBid);
+app.put("/api/v1/accounts/:accountId/items/:itemId/bids/:bidId", userController.updateBid);
+app.delete("/api/v1/accounts/:accountId/items/:itemId/bids/:bidId", userController.deleteBid);
 
 // Account - Ask Operations
 app.get("/api/v1/accounts/:id/asks", itemController.getItem);
