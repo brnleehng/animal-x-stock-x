@@ -127,9 +127,9 @@ app.delete("/api/v1/items/:id/asks/:askId", itemController.deleteAsk);
 
 // Trade Operations
 app.get("/api/v1/trades", tradeController.listTrades);
-app.post("/api/v1/trades/:id", tradeController.createTrade);
+app.post("/api/v1/trades", tradeController.createTrade);
 app.get("/api/v1/trades/:id", tradeController.getTrade);
-app.put("/api/v1/trades/:id", tradeController.updateTrade);
+app.patch("/api/v1/trades/:id", tradeController.updateTrade);
 app.delete("/api/v1/trades/:id", tradeController.deleteTrade);
 
 // User Operations
