@@ -13,6 +13,8 @@ import { OrderDocument } from "../models/Order";
 import { userInfo } from "os";
 import { BidDocument } from "../models/Bid";
 import { MONGODB_URI } from "../util/secrets";
+import mongoose  from "mongoose";
+import logger from "../util/logger";
 
 /**
  * GET /login
@@ -463,9 +465,9 @@ export const getAccountProfile = (req: Request, res: Response) => {
  * Get bid via API
  */
 export const getBid = async (req: Request, res: Response) => {
-    const currentUser = User.findOne({ id: req.params.accountId });
-    const currentItem = User.findOne({ id: req.params.itemId });
-
+    const currentUser = User.findOne({ _id: req.params.accountId });
+    const currentItem = User.findOne({ _id: req.params.itemId });
+    
     const session = new MongoClient(MONGODB_URI).startSession();
 
     const transactionOptions: TransactionOptions = {
@@ -477,22 +479,22 @@ export const getBid = async (req: Request, res: Response) => {
     try {
         const transactionResults = await session.withTransaction(async () => {
             
-            const userBid = (await currentUser).bids.filter(x => x.order.id === req.params.bidId);
-            const itemBid = (await currentItem).bids.filter(x => x.order.id === req.params.bidId);
+            const userBid = (await currentUser).bids.filter(x => x.order._id === req.params.bidId);
+            const itemBid = (await currentItem).bids.filter(x => x.order._id === req.params.bidId);
 
             if (userBid.length === 1 && itemBid.length == 1 && userBid[0]._id === itemBid[0]._id) {
-                console.log(`Bid ${userBid[0]._id} found in the User and Item collection.`);
+                logger.info(`Bid ${userBid[0]._id} found in the User and Item collection.`);
                 return res.json(userBid[0]);
             }
         }, transactionOptions);
 
         if (transactionResults !== null) {
-            console.log("The bid was successfully got.");
+            logger.info("The bid was successfully got.");
         } else {
-            console.log("The transaction was intentionally aborted.");
+            logger.error("The transaction was intentionally aborted.");
         }
     } catch(e) {
-        console.log("The transaction was aborted due to an unexpected error: " + e);
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         await session.endSession();
     }
@@ -503,10 +505,10 @@ export const getBid = async (req: Request, res: Response) => {
  * Create bid via API
  */
 export const placeBid = async (req: Request, res: Response) => {
-    const currentUser = User.findOne({ id: req.params.accountId });
+    const currentUser = User.findOne({ _id: req.params.accountId });
 
     const orderDocument = {
-        id: "1",
+        _id: "1",
         createdTime: new Date(Date.now()),
         userId: req.params.accountId,
         state: "Active"
@@ -535,35 +537,35 @@ export const placeBid = async (req: Request, res: Response) => {
                 { email: userEmail },
                 { $addToSet: {  userBids: bidDocument } },
                 { session});
-            console.log(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-            console.log(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the bid.`);
+            logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
+            logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the bid.`);
         
         const isBidPlacedResults = await Item.findOne(
-            { id: req.params.itemId, bids: { $in: bidDocument.order.id } },
+            { _id: req.params.itemId, bids: { $in: bidDocument.order._id } },
             { session });
         if (isBidPlacedResults) {
             await session.abortTransaction();
-                console.error("This bid is already placed for this item. The bid could not be created.");
-                console.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                logger.error("This bid is already placed for this item. The bid could not be created.");
+                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                 return;
         }
 
         const itemsUpdateResults = await Item.updateOne(
-            { id: req.params.itemId },
+            { _id: req.params.itemId },
             { $addToSet: { bids: bidDocument } },
             { session }
         );
-        console.log(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the id ${req.params.itemId}.`);
-        console.log(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to include the item bid.`);
+        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the id ${req.params.itemId}.`);
+        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to include the item bid.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
-            console.log("The bid was successfully created.");
+            logger.info("The bid was successfully created.");
         } else {
-            console.log("The transaction was intentionally aborted.");
+            logger.error("The transaction was intentionally aborted.");
         }
     } catch(e) {
-        console.log("The transaction was aborted due to an unexpected error: " + e);
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         await session.endSession();
     }
@@ -575,10 +577,10 @@ export const placeBid = async (req: Request, res: Response) => {
  * Update bid via API
  */
 export const updateBid = async (req: Request, res: Response) => {
-    const currentUser = User.findOne({ id: req.params.accountId });
+    const currentUser = User.findOne({ _id: req.params.accountId });
 
     const orderDocument = {
-        id: "1",
+        _id: "1",
         createdTime: new Date(Date.now()),
         userId: req.params.accountId,
         state: "Active"
@@ -608,38 +610,38 @@ export const updateBid = async (req: Request, res: Response) => {
                 { $set: { price: bidDocument.bidPrice, state: bidDocument.order.state } },
                 { session});
             if (usersUpdateResults !== null) {
-                console.log(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-                console.log(`${usersUpdateResults.modifiedCount} document(s) was/were updated to change the bid.`);
+                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to change the bid.`);
             } else {
                 console.error("This bid does not exist for this user. The bid could not be updated.");
                 return;
             }
         const isBidPlacedResults = await Item.findOne(
-            { id: req.params.itemId, bids: { $in: req.params.bidId} },
+            { _id: req.params.itemId, bids: { $in: req.params.bidId} },
             { session });
         if (isBidPlacedResults === null) {
             await session.abortTransaction();
-                console.error("This bid could not be found for this item. The bid could not be updated.");
-                console.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                logger.error("This bid could not be found for this item. The bid could not be updated.");
+                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                 return;
         }
 
         const itemsUpdateResults = await Item.updateOne(
-            { id: req.params.itemId, bids: { $in: req.params.bidId }},
+            { _id: req.params.itemId, bids: { $in: req.params.bidId }},
             { $set: { price: bidDocument.bidPrice, state: bidDocument.order.state } },
             { session }
         );
-        console.log(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
-        console.log(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to update the bid.`);
+        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
+        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to update the bid.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
-            console.log("The bid was successfully updated.");
+            logger.info("The bid was successfully updated.");
         } else {
-            console.log("The transaction was intentionally aborted.");
+            logger.error("The transaction was intentionally aborted.");
         }
     } catch(e) {
-        console.log("The transaction was aborted due to an unexpected error: " + e);
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         await session.endSession();
     }
@@ -651,7 +653,7 @@ export const updateBid = async (req: Request, res: Response) => {
  * Delete bid via API
  */
 export const deleteBid = async (req: Request, res: Response) => {
-    const currentUser = User.findOne({ id: req.params.accountId });
+    const currentUser = User.findOne({ _id: req.params.accountId });
 
     const session = new MongoClient(MONGODB_URI).startSession();
 
@@ -669,41 +671,41 @@ export const deleteBid = async (req: Request, res: Response) => {
 
             const usersUpdateResults = await User.updateOne(
                 { email: userEmail, bids: { $in: req.params.bidId } },
-                { $pull: { bids: { id: req.params.bidId } } } ,
+                { $pull: { bids: { _id: req.params.bidId } } } ,
                 { session });
             if (usersUpdateResults !== null) {
-                console.log(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-                console.log(`${usersUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
+                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
             } else {
-                console.error("This bid does not exist for this item. The bid could not be deleted.");
+                logger.error("This bid does not exist for this item. The bid could not be deleted.");
                 return;
             }
         const isBidPlacedResults = await Item.findOne(
-            { id: req.params.itemId, bids: { $in: req.params.bidId} },
+            { _id: req.params.itemId, bids: { $in: req.params.bidId} },
             { session });
         if (isBidPlacedResults === null) {
             await session.abortTransaction();
-                console.error("This bid does not exist for this item. The bid could not be deleted.");
-                console.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                logger.error("This bid does not exist for this item. The bid could not be deleted.");
+                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                 return;
         }
 
         const itemsUpdateResults = await Item.updateOne(
-            { id: req.params.itemId, bids: { $in: req.params.bidId }},
-            { $pull: { bids: { id: req.params.bidId } } } ,
+            { _id: req.params.itemId, bids: { $in: req.params.bidId }},
+            { $pull: { bids: { _id: req.params.bidId } } } ,
             { session }
         );
-        console.log(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
-        console.log(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
+        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
+        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
-            console.log("The bid was successfully deleted.");
+            logger.info("The bid was successfully deleted.");
         } else {
-            console.log("The transaction was intentionally aborted.");
+            logger.error("The transaction was intentionally aborted.");
         }
     } catch(e) {
-        console.log("The transaction was aborted due to an unexpected error: " + e);
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         await session.endSession();
     }
