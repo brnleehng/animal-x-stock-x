@@ -468,6 +468,16 @@ export const getBid = async (req: Request, res: Response) => {
     const currentUser = User.findOne({ _id: req.params.accountId });
     const currentItem = User.findOne({ _id: req.params.itemId });
     
+    if (currentUser === null) {
+        logger.error("Can't find bid for user");
+        return
+    }
+
+    if (currentItem === null) {
+        logger.error("Can't find bid for item");
+        return
+    }
+
     const session = new MongoClient(MONGODB_URI).startSession();
 
     const transactionOptions: TransactionOptions = {
