@@ -107,7 +107,7 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
 // Item Operations
 app.get("/api/v1/items", itemController.listItems);
 app.post("/api/v1/items", itemController.createItem);
-app.get("/api/v1/items/:id", itemController.getItem);
+app.get("/api/v1/items/:_id", itemController.getItem);
 app.put("/api/v1/items/:id", itemController.updateItem);
 app.delete("/api/v1/items/:id", itemController.deleteItem);
 
@@ -137,10 +137,10 @@ app.put("/api/v1/accounts/:id", userController.updateAccount);
 
 // Account - Bid Operations
 app.get("/api/v1/accounts/:id/bids", itemController.getItem);
-app.post("/api/v1/accounts/:accountId/items/:itemId", userController.placeBid);
-app.get("/api/v1/accounts/:accountId/items/:itemId/bids/:bidId", userController.getBid);
-app.put("/api/v1/accounts/:accountId/items/:itemId/bids/:bidId", userController.updateBid);
-app.delete("/api/v1/accounts/:accountId/items/:itemId/bids/:bidId", userController.deleteBid);
+app.post("/api/v1/accounts/:accountId", userController.placeBid);
+app.get("/api/v1/accounts/:accountId/bids/:bidId", userController.getBid);
+app.put("/api/v1/accounts/:accountId/bids/:bidId", userController.updateBid);
+app.delete("/api/v1/accounts/:accountId/bids/:bidId", userController.deleteBid);
 
 // Account - Ask Operations
 app.get("/api/v1/accounts/:id/asks", itemController.getItem);

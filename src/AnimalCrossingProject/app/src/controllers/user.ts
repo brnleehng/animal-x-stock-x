@@ -461,7 +461,7 @@ export const getAccountProfile = (req: Request, res: Response) => {
 
 
 /**
- * GET /api/v1/accounts/:accountId/items/:itemId/bids/:bidId
+ * GET /api/v1/accounts/:accountId/bids/:bidId
  * Get bid via API
  */
 export const getBid = async (req: Request, res: Response) => {
@@ -470,12 +470,12 @@ export const getBid = async (req: Request, res: Response) => {
     
     if (currentUser === null) {
         logger.error("Can't find bid for user");
-        return
+        return;
     }
 
     if (currentItem === null) {
         logger.error("Can't find bid for item");
-        return
+        return;
     }
 
     const session = new MongoClient(MONGODB_URI).startSession();
@@ -511,7 +511,7 @@ export const getBid = async (req: Request, res: Response) => {
 };
 
 /**
- * POST /api/v1/accounts/:accountId/items/:itemId
+ * POST /api/v1/accounts/:accountId/
  * Create bid via API
  */
 export const placeBid = async (req: Request, res: Response) => {
@@ -583,7 +583,7 @@ export const placeBid = async (req: Request, res: Response) => {
 };
 
 /**
- * PUT /api/v1/accounts/:accountId/items/:itemId/bids/:bidId
+ * PUT /api/v1/accounts/:accountId/bids/:bidId
  * Update bid via API
  */
 export const updateBid = async (req: Request, res: Response) => {
@@ -659,7 +659,7 @@ export const updateBid = async (req: Request, res: Response) => {
 };
 
 /**
- * DELETE /api/v1/accounts/:accountId/items/:itemId/bids/:bidId
+ * DELETE /api/v1/accounts/:accountId/bids/:bidId
  * Delete bid via API
  */
 export const deleteBid = async (req: Request, res: Response) => {
