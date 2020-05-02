@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import async from "async";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
@@ -9,11 +10,9 @@ import { IVerifyOptions } from "passport-local";
 import { MongoClient, TransactionOptions, WriteError } from "mongodb";
 import { check, sanitize, validationResult } from "express-validator";
 import "../config/passport";
-import { OrderDocument } from "../models/Order";
-import { userInfo } from "os";
-import { BidDocument } from "../models/Bid";
+import { Bid } from "../models/Bid";
+import { Order } from "../models/Order";
 import { MONGODB_URI } from "../util/secrets";
-import mongoose  from "mongoose";
 import logger from "../util/logger";
 
 /**
@@ -478,7 +477,7 @@ export const getBid = async (req: Request, res: Response) => {
         return;
     }
 
-    const session = new MongoClient(MONGODB_URI).startSession();
+    const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
         readPreference: "primary",
@@ -506,7 +505,7 @@ export const getBid = async (req: Request, res: Response) => {
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
-        await session.endSession();
+        session.endSession();
     }
 };
 
@@ -517,19 +516,12 @@ export const getBid = async (req: Request, res: Response) => {
 export const placeBid = async (req: Request, res: Response) => {
     const currentUser = User.findOne({ _id: req.params.accountId });
 
-    const orderDocument = {
-        _id: "1",
-        createdTime: new Date(Date.now()),
-        userId: req.params.accountId,
-        state: "Active"
-    };
+    const orderCreateParameter = new Order(req.body.order);
+    const bidCreateParameter = new Bid(req.body.bidPrice);
+    bidCreateParameter.order = orderCreateParameter;
 
-    const bidDocument = {
-        bidPrice: req.body.bidPrice,
-        order: orderDocument
-    };
-
-    const session = new MongoClient(MONGODB_URI).startSession();
+    // const connect = await mongoose.connect(MONGODB_URI);
+    const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
         readPreference: "primary",
@@ -545,13 +537,13 @@ export const placeBid = async (req: Request, res: Response) => {
 
             const usersUpdateResults = await User.updateOne(
                 { email: userEmail },
-                { $addToSet: {  userBids: bidDocument } },
+                { $addToSet: {  userBids: bidCreateParameter } },
                 { session});
             logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
             logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the bid.`);
         
         const isBidPlacedResults = await Item.findOne(
-            { _id: req.params.itemId, bids: { $in: bidDocument.order._id } },
+            { _id: req.params.itemId, bids: { $in: bidCreateParameter } },
             { session });
         if (isBidPlacedResults) {
             await session.abortTransaction();
@@ -562,7 +554,7 @@ export const placeBid = async (req: Request, res: Response) => {
 
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.params.itemId },
-            { $addToSet: { bids: bidDocument } },
+            { $addToSet: { bids: bidCreateParameter } },
             { session }
         );
         logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the id ${req.params.itemId}.`);
@@ -577,7 +569,7 @@ export const placeBid = async (req: Request, res: Response) => {
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
-        await session.endSession();
+        session.endSession();
     }
 
 };
@@ -589,19 +581,11 @@ export const placeBid = async (req: Request, res: Response) => {
 export const updateBid = async (req: Request, res: Response) => {
     const currentUser = User.findOne({ _id: req.params.accountId });
 
-    const orderDocument = {
-        _id: "1",
-        createdTime: new Date(Date.now()),
-        userId: req.params.accountId,
-        state: "Active"
-    };
+    const orderCreateParameter = new Order(req.body.order);
+    const bidCreateParameter = new Bid(req.body.bidPrice);
+    bidCreateParameter.order = orderCreateParameter;
 
-    const bidDocument = {
-        bidPrice: req.body.bidPrice,
-        order: orderDocument
-    };
-
-    const session = new MongoClient(MONGODB_URI).startSession();
+    const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
         readPreference: "primary",
@@ -617,7 +601,7 @@ export const updateBid = async (req: Request, res: Response) => {
 
             const usersUpdateResults = await User.updateOne(
                 { email: userEmail, bids: { $in: req.params.bidId }},
-                { $set: { price: bidDocument.bidPrice, state: bidDocument.order.state } },
+                { $set: { price: bidCreateParameter.bidPrice, state: bidCreateParameter.order.state } },
                 { session});
             if (usersUpdateResults !== null) {
                 logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
@@ -627,7 +611,7 @@ export const updateBid = async (req: Request, res: Response) => {
                 return;
             }
         const isBidPlacedResults = await Item.findOne(
-            { _id: req.params.itemId, bids: { $in: req.params.bidId} },
+            { _id: req.params.itemId, bids: { $in: bidCreateParameter} },
             { session });
         if (isBidPlacedResults === null) {
             await session.abortTransaction();
@@ -638,7 +622,7 @@ export const updateBid = async (req: Request, res: Response) => {
 
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.params.itemId, bids: { $in: req.params.bidId }},
-            { $set: { price: bidDocument.bidPrice, state: bidDocument.order.state } },
+            { $set: { price: bidCreateParameter.bidPrice, state: bidCreateParameter.order.state } },
             { session }
         );
         logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
@@ -653,7 +637,7 @@ export const updateBid = async (req: Request, res: Response) => {
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
-        await session.endSession();
+        session.endSession();
     }
 
 };
@@ -665,7 +649,7 @@ export const updateBid = async (req: Request, res: Response) => {
 export const deleteBid = async (req: Request, res: Response) => {
     const currentUser = User.findOne({ _id: req.params.accountId });
 
-    const session = new MongoClient(MONGODB_URI).startSession();
+    const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
         readPreference: "primary",
@@ -717,7 +701,7 @@ export const deleteBid = async (req: Request, res: Response) => {
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
-        await session.endSession();
+        session.endSession();
     }
 
 };
