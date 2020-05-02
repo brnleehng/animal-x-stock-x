@@ -30,13 +30,13 @@ export const createItem = (req: Request, res: Response) => {
 };
 
 /**
- * DELETE /api/v1/items/:id
+ * DELETE /api/v1/items/:itemId
  * Delete an item to the MongoDB.
  */
 export const deleteItem = (req: Request, res: Response) => {
     Item.remove(
         {
-            id: req.params.id
+            _id: req.params.itemId
         },
         (err) => {
             if (err) {
@@ -50,7 +50,7 @@ export const deleteItem = (req: Request, res: Response) => {
 };
 
 /**
- * PATCH /api/v1/items/:id
+ * PUT /api/v1/items/:itemId
  * Update an item from the MongoDB.
  */
 export const updateItem = (req: Request, res: Response) => {
@@ -58,7 +58,7 @@ export const updateItem = (req: Request, res: Response) => {
         return res.redirect("/");
     }
 
-    Item.findOneAndUpdate({ id: req.params.id }, req.body, { new: true }, (err, item) => {
+    Item.findOneAndUpdate({ _id: req.params.itemId }, req.body, { new: true }, (err, item) => {
         if (err) {
           res.send(err);
         }
@@ -68,15 +68,14 @@ export const updateItem = (req: Request, res: Response) => {
 };
 
 /**
- * GET /api/v1/items/:id
+ * GET /api/v1/items/:itemId
  * Get an item to the MongoDB.
  */
 export const getItem = (req: Request, res: Response) => {
-    Item.findById({ id: req.params.id }, (err, item) => {
+    Item.findById({ _id: req.params.itemId }, (err, item) => {
         if (err) {
           res.send(err);
         }
-
         res.json(item);
     });
 };
