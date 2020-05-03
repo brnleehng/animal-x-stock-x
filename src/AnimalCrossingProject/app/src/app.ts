@@ -116,10 +116,6 @@ app.get("/api/v1/items/:id/bids", itemController.getItem);
 
 // Ask Operations
 app.get("/api/v1/items/:id/asks", itemController.getItem);
-app.post("/api/v1/items/:id/asks", itemController.placeAsk);
-app.get("/api/v1/items/:id/asks/:askId", itemController.getAsk);
-app.put("/api/v1/items/:id/asks/:askId", itemController.updateAsk);
-app.delete("/api/v1/items/:id/asks/:askId", itemController.deleteAsk);
 
 // Trade Operations
 app.get("/api/v1/trades", tradeController.listTrades);
@@ -144,10 +140,10 @@ app.delete("/api/v1/accounts/:accountId/bids/:bidId", userController.deleteBid);
 
 // Account - Ask Operations
 app.get("/api/v1/accounts/:id/asks", itemController.getItem);
-app.post("/api/v1/accounts/:id/asks", itemController.placeAsk);
-app.get("/api/v1/accounts/:id/asks/:askId", itemController.getAsk);
-app.put("/api/v1/accounts/:id/asks/:askId", itemController.updateAsk);
-app.delete("/api/v1/accounts/:id/asks/:askId", itemController.deleteAsk);
+app.post("/api/v1/accounts/:id/asks", userController.placeAsk);
+app.get("/api/v1/accounts/:id/asks/:askId", userController.getAsk);
+app.put("/api/v1/accounts/:id/asks/:askId", userController.updateAsk);
+app.delete("/api/v1/accounts/:id/asks/:askId", userController.deleteAsk);
 
 /**
  * API examples routes.
