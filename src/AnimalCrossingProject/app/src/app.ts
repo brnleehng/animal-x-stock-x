@@ -153,6 +153,9 @@ app.get("/api/v1/accounts/:id/asks/:askId", itemController.getAsk);
 app.put("/api/v1/accounts/:id/asks/:askId", itemController.updateAsk);
 app.delete("/api/v1/accounts/:id/asks/:askId", itemController.deleteAsk);
 
+// Create Items in bulk for intiation
+app.post("/api/v1/acdb", itemController.createItemsBulk);
+
 /**
  * API examples routes.
  */
