@@ -10,6 +10,7 @@ import { IVerifyOptions } from "passport-local";
 import { MongoClient, TransactionOptions, WriteError } from "mongodb";
 import { check, sanitize, validationResult } from "express-validator";
 import "../config/passport";
+import { Ask } from "../models/Ask"; 
 import { Bid } from "../models/Bid";
 import { Order } from "../models/Order";
 import { MONGODB_URI } from "../util/secrets";
@@ -460,6 +461,249 @@ export const getAccountProfile = (req: Request, res: Response) => {
 
 
 /**
+ * GET /api/v1/accounts/:accountId/asks/:askId
+ * Get ask via API
+ */
+export const getAsk = async (req: Request, res: Response) => {
+    const currentUser = User.findOne({ _id: req.params.accountId });
+    const currentItem = User.findOne({ _id: req.params.itemId });
+    
+    if (currentUser === null) {
+        logger.error("Can't find ask for user");
+        return;
+    }
+
+    if (currentItem === null) {
+        logger.error("Can't find ask for item");
+        return;
+    }
+
+    const session = await mongoose.startSession();
+
+    const transactionOptions: TransactionOptions = {
+        readPreference: "primary",
+        readConcern: { level: "local"},
+        writeConcern: { w: "majority" }
+    };
+
+    try {
+        const transactionResults = await session.withTransaction(async () => {
+            
+            const userAsk = (await currentUser).asks.filter(x => x.order._id === req.params.askId);
+            const itemAsk = (await currentItem).asks.filter(x => x.order._id === req.params.askId);
+
+            if (userAsk.length === 1 && itemAsk.length == 1 && userAsk[0]._id === itemAsk[0]._id) {
+                logger.info(`Ask ${userAsk[0]._id} found in the User and Item collection.`);
+                return res.json(userAsk[0]);
+            }
+        }, transactionOptions);
+
+        if (transactionResults !== null) {
+            logger.info("The ask was successfully got.");
+        } else {
+            logger.error("The transaction was intentionally aborted.");
+        }
+    } catch(e) {
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
+    } finally {
+        session.endSession();
+    }
+};
+
+/**
+ * POST /api/v1/accounts/:accountId/
+ * Create ask via API
+ */
+export const placeAsk = async (req: Request, res: Response) => {
+    const currentUser = User.findOne({ _id: req.params.accountId });
+
+    const orderCreateParameter = new Order(req.body.order);
+    const askCreateParameter = new Ask(req.body.askPrice);
+    askCreateParameter.order = orderCreateParameter;
+
+    const session = await mongoose.startSession();
+
+    const transactionOptions: TransactionOptions = {
+        readPreference: "primary",
+        readConcern: { level: "local"},
+        writeConcern: { w: "majority" }
+    };
+
+    const userEmail = (await currentUser).email;
+
+    try {
+        const transactionResults = await session.withTransaction(async () => {
+
+            const usersUpdateResults = await User.updateOne(
+                { email: userEmail },
+                { $addToSet: {  asks: askCreateParameter } },
+                { session});
+            logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
+            logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the bid.`);
+        
+        const isAskPlacedResults = await Item.findOne(
+            { _id: req.params.itemId, bids: { $in: askCreateParameter } },
+            { session });
+        if (isAskPlacedResults) {
+            await session.abortTransaction();
+                logger.error("This bid is already placed for this item. The bid could not be created.");
+                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                return;
+        }
+
+        const itemsUpdateResults = await Item.updateOne(
+            { _id: req.params.itemId },
+            { $addToSet: { asks: askCreateParameter } },
+            { session }
+        );
+        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the id ${req.params.itemId}.`);
+        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to include the item ask.`);
+        }, transactionOptions);
+
+        if (transactionResults !== null) {
+            logger.info("The ask was successfully created.");
+        } else {
+            logger.error("The transaction was intentionally aborted.");
+        }
+    } catch(e) {
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
+    } finally {
+        session.endSession();
+    }
+
+};
+
+/**
+ * PUT /api/v1/accounts/:accountId/asks/:askId
+ * Update ask via API
+ */
+export const updateAsk = async (req: Request, res: Response) => {
+    const currentUser = User.findOne({ _id: req.params.accountId });
+
+    const orderCreateParameter = new Order(req.body.order);
+    const askCreateParameter = new Ask(req.body.askPrice);
+    askCreateParameter.order = orderCreateParameter;
+
+    const session = await mongoose.startSession();
+
+    const transactionOptions: TransactionOptions = {
+        readPreference: "primary",
+        readConcern: { level: "local"},
+        writeConcern: { w: "majority" }
+    };
+
+    const userEmail = (await currentUser).email;
+
+    try {
+        const transactionResults = await session.withTransaction(async () => {
+
+            const usersUpdateResults = await User.updateOne(
+                { email: userEmail, asks: { $in: req.params.askId }},
+                { $set: { price: askCreateParameter.askPrice, state: askCreateParameter.order.state } },
+                { session});
+            if (usersUpdateResults !== null) {
+                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to change the ask.`);
+            } else {
+                console.error("This ask does not exist for this user. The ask could not be updated.");
+                return;
+            }
+        const isAskPlacedResults = await Item.findOne(
+            { _id: req.params.itemId, asks: { $in: askCreateParameter} },
+            { session });
+        if (isAskPlacedResults === null) {
+            await session.abortTransaction();
+                logger.error("This ask could not be found for this item. The ask could not be updated.");
+                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                return;
+        }
+
+        const itemsUpdateResults = await Item.updateOne(
+            { _id: req.params.itemId, asks: { $in: req.params.askId }},
+            { $set: { price: askCreateParameter.askPrice, state: askCreateParameter.order.state } },
+            { session }
+        );
+        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
+        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to update the ask.`);
+        }, transactionOptions);
+
+        if (transactionResults !== null) {
+            logger.info("The ask was successfully updated.");
+        } else {
+            logger.error("The transaction was intentionally aborted.");
+        }
+    } catch(e) {
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
+    } finally {
+        session.endSession();
+    }
+
+};
+
+/**
+ * DELETE /api/v1/accounts/:accountId/asks/:askId
+ * Delete ask via API
+ */
+export const deleteAsk = async (req: Request, res: Response) => {
+    const currentUser = User.findOne({ _id: req.params.accountId });
+
+    const session = await mongoose.startSession();
+
+    const transactionOptions: TransactionOptions = {
+        readPreference: "primary",
+        readConcern: { level: "local"},
+        writeConcern: { w: "majority" }
+    };
+
+    const userEmail = (await currentUser).email;
+
+    try {
+        const transactionResults = await session.withTransaction(async () => {
+
+            const usersUpdateResults = await User.updateOne(
+                { email: userEmail, asks: { $in: req.params.askId } },
+                { $pull: { asks: { _id: req.params.askId } } } ,
+                { session });
+            if (usersUpdateResults !== null) {
+                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
+            } else {
+                logger.error("This ask does not exist for this item. The bid could not be deleted.");
+                return;
+            }
+        const isAskPlacedResults = await Item.findOne(
+            { _id: req.params.itemId, bids: { $in: req.params.askId} },
+            { session });
+        if (isAskPlacedResults === null) {
+            await session.abortTransaction();
+                logger.error("This ask does not exist for this item. The ask could not be deleted.");
+                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                return;
+        }
+
+        const itemsUpdateResults = await Item.updateOne(
+            { _id: req.params.itemId, asks: { $in: req.params.askId }},
+            { $pull: { asks: { _id: req.params.askId } } } ,
+            { session }
+        );
+        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
+        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to delete the ask.`);
+        }, transactionOptions);
+
+        if (transactionResults !== null) {
+            logger.info("The ask was successfully deleted.");
+        } else {
+            logger.error("The transaction was intentionally aborted.");
+        }
+    } catch(e) {
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
+    } finally {
+        session.endSession();
+    }
+
+};
+
+/**
  * GET /api/v1/accounts/:accountId/bids/:bidId
  * Get bid via API
  */
@@ -530,14 +774,13 @@ export const placeBid = async (req: Request, res: Response) => {
     };
 
     const userEmail = (await currentUser).email;
-    const userBids = (await currentUser).bids;
 
     try {
         const transactionResults = await session.withTransaction(async () => {
 
             const usersUpdateResults = await User.updateOne(
                 { email: userEmail },
-                { $addToSet: {  userBids: bidCreateParameter } },
+                { $addToSet: {  bids: bidCreateParameter } },
                 { session});
             logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
             logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the bid.`);
@@ -594,7 +837,6 @@ export const updateBid = async (req: Request, res: Response) => {
     };
 
     const userEmail = (await currentUser).email;
-    const userBids = (await currentUser).bids;
 
     try {
         const transactionResults = await session.withTransaction(async () => {
@@ -705,8 +947,4 @@ export const deleteBid = async (req: Request, res: Response) => {
     }
 
 };
-
-
-
-
-                        
+                  
