@@ -613,7 +613,6 @@ export const updateAsk = async (req: Request, res: Response) => {
         const transactionResults = await session.withTransaction(async () => {
 
             const usersUpdateResults = await User.updateOne(
-                // { _id: req.params.accountId, asks: { _id: req.params.askId }},
                 { _id: req.params.accountId, "asks._id": req.params.askId },
                 { $set: { "asks.$.askPrice": askCreateParameter.askPrice, "asks.$.order.state": askCreateParameter.order.state } },
                 { session, multi: true }
@@ -627,7 +626,6 @@ export const updateAsk = async (req: Request, res: Response) => {
                 return;
             }
         const isAskPlacedResults = await Item.findOne(
-            // { _id: req.body.itemId, asks: { _id: req.params.askId } },
             { _id: req.body.itemId, "asks._id": req.params.askId },
             null,
             { session }
@@ -642,7 +640,6 @@ export const updateAsk = async (req: Request, res: Response) => {
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId, "asks._id": req.params.askId },
             { $set: { "asks.$.askPrice": askCreateParameter.askPrice, "asks.$.order.state": askCreateParameter.order.state } },
-            // { $set: { price: askCreateParameter.askPrice, state: askCreateParameter.order.state } },
             { session, multi: true }
         );
         logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.body.itemId} and ask id ${req.params.askId}.`);
@@ -700,7 +697,6 @@ export const deleteAsk = async (req: Request, res: Response) => {
             }
         const isAskPlacedResults = await Item.findOne(
             { _id: req.body.itemId, "asks._id": req.params.askId },
-            // { _id: req.body.itemId, asks: { _id: req.params.askId} },
             null,
             { session }
         );
@@ -714,7 +710,6 @@ export const deleteAsk = async (req: Request, res: Response) => {
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId },
             { $pull: { "asks": { "_id": req.params.askId } } },
-            // { $pull: { asks: { _id: req.params.askId } } },
             { session, multi: true },
         );
         logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.params.itemId} and ask id ${req.params.askId}.`);
@@ -888,7 +883,6 @@ export const updateBid = async (req: Request, res: Response) => {
         const transactionResults = await session.withTransaction(async () => {
 
             const usersUpdateResults = await User.updateOne(
-                // { _id: req.params.accountId, bids: { _id: req.params.bidId }},
                 { _id: req.params.accountId, "bids._id": req.params.bidId },
                 { $set: { "bids.$.bidPrice": bidCreateParameter.bidPrice, "bids.$.order.state": bidCreateParameter.order.state } },
                 { session, multi: true }
@@ -902,7 +896,6 @@ export const updateBid = async (req: Request, res: Response) => {
                 return;
             }
         const isBidPlacedResults = await Item.findOne(
-            // { _id: req.body.itemId, bids: { _id: req.params.bidId } },
             { _id: req.body.itemId, "bids._id": req.params.bidId },
             null,
             { session }
@@ -917,7 +910,6 @@ export const updateBid = async (req: Request, res: Response) => {
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId, "bids._id": req.params.bidId },
             { $set: { "bids.$.bidPrice": bidCreateParameter.bidPrice, "bids.$.order.state": bidCreateParameter.order.state } },
-            // { $set: { price: bidCreateParameter.bidPrice, state: bidCreateParameter.order.state } },
             { session, multi: true }
         );
         logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.body.itemId} and bid id ${req.params.bidId}.`);
@@ -975,7 +967,6 @@ export const deleteBid = async (req: Request, res: Response) => {
             }
         const isBidPlacedResults = await Item.findOne(
             { _id: req.body.itemId, "bids._id": req.params.bidId },
-            // { _id: req.body.itemId, bids: { _id: req.params.bidId} },
             null,
             { session }
         );
@@ -989,7 +980,6 @@ export const deleteBid = async (req: Request, res: Response) => {
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId },
             { $pull: { "bids": { "_id": req.params.bidId } } },
-            // { $pull: { bids: { _id: req.params.bidId } } },
             { session, multi: true },
         );
         logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
