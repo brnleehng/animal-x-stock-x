@@ -12,7 +12,7 @@ import { check, sanitize, validationResult } from "express-validator";
 import "../config/passport";
 import { Ask } from "../models/Ask"; 
 import { Bid, BidDocument } from "../models/Bid";
-import { Order } from "../models/Order";
+import { orderSchema } from "../models/Order";
 import { MONGODB_URI } from "../util/secrets";
 import logger from "../util/logger";
 
@@ -480,6 +480,7 @@ export const getAsk = async (req: Request, res: Response) => {
                 null,
                 { session }
             );
+            
             const itemAsk = Item.findOne(
                 { _id: req.body.itemId, asks: { _id: req.params.askId } },
                 null,
@@ -496,14 +497,15 @@ export const getAsk = async (req: Request, res: Response) => {
                 logger.error("Can't find ask for item");
             }
 
-            logger.info(`Ask ${userAsk} found in the User and Item collection.`);
+            logger.info(`Ask ${(await userAsk).toJSON} found in the User and Item collection.`);
             
         }, transactionOptions);
 
         if (transactionResults !== null) {
             logger.info("The ask was successfully got.");
         } else {
-            logger.error("The transaction was intentionally aborted.");
+            // is findOne a transaction?
+            // logger.error("The transaction was intentionally aborted.");
         }
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
@@ -517,7 +519,7 @@ export const getAsk = async (req: Request, res: Response) => {
  * Create ask via API
  */
 export const placeAsk = async (req: Request, res: Response) => {
-    const askCreateParameter = new Ask({ order: Order });
+    const askCreateParameter = new Ask({ order: orderSchema });
     askCreateParameter.askPrice = +req.body.askPrice;
     askCreateParameter.order.id = req.body.id;
     askCreateParameter.order.createdTime = new Date(req.body.createdTime);
@@ -541,17 +543,17 @@ export const placeAsk = async (req: Request, res: Response) => {
             const usersUpdateResults = await User.updateOne(
                 { _id: req.params.accountId },
                 { $addToSet: {  asks: askCreateParameter } },
-                { session }
+                { session, multi: true }
             );
             logger.info(`${usersUpdateResults}`);
-            logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-            logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the ask.`);
+            logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
+            logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to include the ask.`);
         
         logger.info("Checking asks");
         const isAskPlacedResults = await Item.findOne(
             { _id: req.body.itemId, asks: { $in: askCreateParameter } },
             null,
-            { session }
+            { session, multi: true }
         );
         if (isAskPlacedResults) {
             await session.abortTransaction();
@@ -566,8 +568,8 @@ export const placeAsk = async (req: Request, res: Response) => {
             { $addToSet: { asks: askCreateParameter } },
             { session }
         );
-        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the id ${req.params.itemId}.`);
-        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to include the item ask.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the id ${req.params.itemId}.`);
+        logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to include the item ask.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
@@ -589,7 +591,7 @@ export const placeAsk = async (req: Request, res: Response) => {
  * Update ask via API
  */
 export const updateAsk = async (req: Request, res: Response) => {
-    const askCreateParameter = new Ask({ order: Order });
+    const askCreateParameter = new Ask({ order: orderSchema });
     askCreateParameter.askPrice = +req.body.askPrice;
     askCreateParameter.order.id = req.body.id;
     askCreateParameter.order.createdTime = new Date(req.body.createdTime);
@@ -611,20 +613,25 @@ export const updateAsk = async (req: Request, res: Response) => {
         const transactionResults = await session.withTransaction(async () => {
 
             const usersUpdateResults = await User.updateOne(
-                { email: userEmail, asks: { $in: req.params.askId }},
-                { $set: { price: askCreateParameter.askPrice, state: askCreateParameter.order.state } },
-                { session});
+                // { _id: req.params.accountId, asks: { _id: req.params.askId }},
+                { _id: req.params.accountId, "asks._id": req.params.askId },
+                { $set: { "asks.$.askPrice": askCreateParameter.askPrice, "asks.$.order.state": askCreateParameter.order.state } },
+                { session, multi: true }
+            );
+            logger.info(usersUpdateResults);
             if (usersUpdateResults !== null) {
-                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to change the ask.`);
+                logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to change the ask.`);
             } else {
                 console.error("This ask does not exist for this user. The ask could not be updated.");
                 return;
             }
         const isAskPlacedResults = await Item.findOne(
-            { _id: req.body.itemId, asks: { _id: req.params.askId } },
+            // { _id: req.body.itemId, asks: { _id: req.params.askId } },
+            { _id: req.body.itemId, "asks._id": req.params.askId },
             null,
-            { session });
+            { session }
+        );
         if (isAskPlacedResults === null) {
             await session.abortTransaction();
                 logger.error("This ask could not be found for this item. The ask could not be updated.");
@@ -633,12 +640,13 @@ export const updateAsk = async (req: Request, res: Response) => {
         }
 
         const itemsUpdateResults = await Item.updateOne(
-            { _id: req.body.itemId, asks: { _id: req.params.askId }},
-            { $set: { price: askCreateParameter.askPrice, state: askCreateParameter.order.state } },
-            { session }
+            { _id: req.body.itemId, "asks._id": req.params.askId },
+            { $set: { "asks.$.askPrice": askCreateParameter.askPrice, "asks.$.order.state": askCreateParameter.order.state } },
+            // { $set: { price: askCreateParameter.askPrice, state: askCreateParameter.order.state } },
+            { session, multi: true }
         );
-        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and ask id ${req.params.askId}.`);
-        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to update the ask.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.body.itemId} and ask id ${req.params.askId}.`);
+        logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to update the ask.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
@@ -679,19 +687,20 @@ export const deleteAsk = async (req: Request, res: Response) => {
 
             const usersUpdateResults = await User.updateOne(
                 { _id: req.params.accountId },
-                { $pull: { asks: { _id: req.params.askId } } } ,
-                { session }
+                { $pull: { "asks": { "_id": req.params.askId } } },
+                { session, multi: true }
             );
             if (usersUpdateResults !== null) {
-                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to delete the ask.`);
-                usersUpdateResults.save();
+                logger.info(usersUpdateResults);
+                logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to delete the ask.`);
             } else {
                 logger.error("This ask does not exist for this item. The ask could not be deleted.");
                 return;
             }
         const isAskPlacedResults = await Item.findOne(
-            { _id: req.body.itemId, asks: { _id: req.params.askId} },
+            { _id: req.body.itemId, "asks._id": req.params.askId },
+            // { _id: req.body.itemId, asks: { _id: req.params.askId} },
             null,
             { session }
         );
@@ -704,12 +713,12 @@ export const deleteAsk = async (req: Request, res: Response) => {
 
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId },
-            { $pull: { asks: { _id: req.params.askId } } } ,
-            { session }
+            { $pull: { "asks": { "_id": req.params.askId } } },
+            // { $pull: { asks: { _id: req.params.askId } } },
+            { session, multi: true },
         );
-        itemsUpdateResults.save();
-        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and ask id ${req.params.askId}.`);
-        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to delete the ask.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.params.itemId} and ask id ${req.params.askId}.`);
+        logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to delete the ask.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
@@ -746,6 +755,7 @@ export const getBid = async (req: Request, res: Response) => {
                 null,
                 { session }
             );
+            
             const itemBid = Item.findOne(
                 { _id: req.body.itemId, bids: { _id: req.params.bidId } },
                 null,
@@ -762,14 +772,15 @@ export const getBid = async (req: Request, res: Response) => {
                 logger.error("Can't find bid for item");
             }
 
-            logger.info(`Bid ${userBid} found in the User and Item collection.`);
+            logger.info(`Bid ${(await userBid).toJSON} found in the User and Item collection.`);
             
         }, transactionOptions);
 
         if (transactionResults !== null) {
             logger.info("The bid was successfully got.");
         } else {
-            logger.error("The transaction was intentionally aborted.");
+            // is findOne a transaction?
+            // logger.error("The transaction was intentionally aborted.");
         }
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
@@ -783,7 +794,7 @@ export const getBid = async (req: Request, res: Response) => {
  * Create bid via API
  */
 export const placeBid = async (req: Request, res: Response) => {
-    const bidCreateParameter = new Bid({ order: Order });
+    const bidCreateParameter = new Bid({ order: orderSchema });
     bidCreateParameter.bidPrice = +req.body.bidPrice;
     bidCreateParameter.order.id = req.body.id;
     bidCreateParameter.order.createdTime = new Date(req.body.createdTime);
@@ -807,17 +818,17 @@ export const placeBid = async (req: Request, res: Response) => {
             const usersUpdateResults = await User.updateOne(
                 { _id: req.params.accountId },
                 { $addToSet: {  bids: bidCreateParameter } },
-                { session }
+                { session, multi: true }
             );
             logger.info(`${usersUpdateResults}`);
-            logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-            logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to include the bid.`);
+            logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
+            logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to include the bid.`);
         
         logger.info("Checking bids");
         const isBidPlacedResults = await Item.findOne(
             { _id: req.body.itemId, bids: { $in: bidCreateParameter } },
             null,
-            { session }
+            { session, multi: true }
         );
         if (isBidPlacedResults) {
             await session.abortTransaction();
@@ -832,8 +843,8 @@ export const placeBid = async (req: Request, res: Response) => {
             { $addToSet: { bids: bidCreateParameter } },
             { session }
         );
-        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the id ${req.params.itemId}.`);
-        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to include the item bid.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the id ${req.params.itemId}.`);
+        logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to include the item bid.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
@@ -855,7 +866,7 @@ export const placeBid = async (req: Request, res: Response) => {
  * Update bid via API
  */
 export const updateBid = async (req: Request, res: Response) => {
-    const bidCreateParameter = new Bid({ order: Order });
+    const bidCreateParameter = new Bid({ order: orderSchema });
     bidCreateParameter.bidPrice = +req.body.bidPrice;
     bidCreateParameter.order.id = req.body.id;
     bidCreateParameter.order.createdTime = new Date(req.body.createdTime);
@@ -877,20 +888,25 @@ export const updateBid = async (req: Request, res: Response) => {
         const transactionResults = await session.withTransaction(async () => {
 
             const usersUpdateResults = await User.updateOne(
-                { email: userEmail, bids: { $in: req.params.bidId }},
-                { $set: { price: bidCreateParameter.bidPrice, state: bidCreateParameter.order.state } },
-                { session});
+                // { _id: req.params.accountId, bids: { _id: req.params.bidId }},
+                { _id: req.params.accountId, "bids._id": req.params.bidId },
+                { $set: { "bids.$.bidPrice": bidCreateParameter.bidPrice, "bids.$.order.state": bidCreateParameter.order.state } },
+                { session, multi: true }
+            );
+            logger.info(usersUpdateResults);
             if (usersUpdateResults !== null) {
-                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to change the bid.`);
+                logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to change the bid.`);
             } else {
                 console.error("This bid does not exist for this user. The bid could not be updated.");
                 return;
             }
         const isBidPlacedResults = await Item.findOne(
-            { _id: req.body.itemId, bids: { _id: req.params.bidId } },
+            // { _id: req.body.itemId, bids: { _id: req.params.bidId } },
+            { _id: req.body.itemId, "bids._id": req.params.bidId },
             null,
-            { session });
+            { session }
+        );
         if (isBidPlacedResults === null) {
             await session.abortTransaction();
                 logger.error("This bid could not be found for this item. The bid could not be updated.");
@@ -899,12 +915,13 @@ export const updateBid = async (req: Request, res: Response) => {
         }
 
         const itemsUpdateResults = await Item.updateOne(
-            { _id: req.body.itemId, bids: { _id: req.params.bidId }},
-            { $set: { price: bidCreateParameter.bidPrice, state: bidCreateParameter.order.state } },
-            { session }
+            { _id: req.body.itemId, "bids._id": req.params.bidId },
+            { $set: { "bids.$.bidPrice": bidCreateParameter.bidPrice, "bids.$.order.state": bidCreateParameter.order.state } },
+            // { $set: { price: bidCreateParameter.bidPrice, state: bidCreateParameter.order.state } },
+            { session, multi: true }
         );
-        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
-        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to update the bid.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.body.itemId} and bid id ${req.params.bidId}.`);
+        logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to update the bid.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
@@ -945,19 +962,20 @@ export const deleteBid = async (req: Request, res: Response) => {
 
             const usersUpdateResults = await User.updateOne(
                 { _id: req.params.accountId },
-                { $pull: { bids: { _id: req.params.bidId } } } ,
-                { session }
+                { $pull: { "bids": { "_id": req.params.bidId } } },
+                { session, multi: true }
             );
             if (usersUpdateResults !== null) {
-                logger.info(`${usersUpdateResults.matchedCount} document(s) found in the User collection with the email address ${userEmail}.`);
-                logger.info(`${usersUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
-                usersUpdateResults.save();
+                logger.info(usersUpdateResults);
+                logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
+                logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to delete the bid.`);
             } else {
                 logger.error("This bid does not exist for this item. The bid could not be deleted.");
                 return;
             }
         const isBidPlacedResults = await Item.findOne(
-            { _id: req.body.itemId, bids: { _id: req.params.bidId} },
+            { _id: req.body.itemId, "bids._id": req.params.bidId },
+            // { _id: req.body.itemId, bids: { _id: req.params.bidId} },
             null,
             { session }
         );
@@ -970,12 +988,12 @@ export const deleteBid = async (req: Request, res: Response) => {
 
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId },
-            { $pull: { bids: { _id: req.params.bidId } } } ,
-            { session }
+            { $pull: { "bids": { "_id": req.params.bidId } } },
+            // { $pull: { bids: { _id: req.params.bidId } } },
+            { session, multi: true },
         );
-        itemsUpdateResults.save();
-        logger.info(`${itemsUpdateResults.matchedCount} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
-        logger.info(`${itemsUpdateResults.modifiedCount} document(s) was/were updated to delete the bid.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the item id ${req.params.itemId} and bid id ${req.params.bidId}.`);
+        logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to delete the bid.`);
         }, transactionOptions);
 
         if (transactionResults !== null) {
