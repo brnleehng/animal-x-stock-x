@@ -132,18 +132,18 @@ app.delete("/api/v1/accounts/:id", userController.deleteAccount);
 app.put("/api/v1/accounts/:id", userController.updateAccount);
 
 // Account - Bid Operations
-app.get("/api/v1/accounts/:id/bids", itemController.getItem);
-app.post("/api/v1/accounts/:accountId", userController.placeBid);
+app.get("/api/v1/accounts/:accountId/bids", itemController.getItem);
+app.post("/api/v1/accounts/:accountId/bids", userController.placeBid);
 app.get("/api/v1/accounts/:accountId/bids/:bidId", userController.getBid);
 app.put("/api/v1/accounts/:accountId/bids/:bidId", userController.updateBid);
 app.delete("/api/v1/accounts/:accountId/bids/:bidId", userController.deleteBid);
 
 // Account - Ask Operations
-app.get("/api/v1/accounts/:id/asks", itemController.getItem);
-app.post("/api/v1/accounts/:id/asks", userController.placeAsk);
-app.get("/api/v1/accounts/:id/asks/:askId", userController.getAsk);
-app.put("/api/v1/accounts/:id/asks/:askId", userController.updateAsk);
-app.delete("/api/v1/accounts/:id/asks/:askId", userController.deleteAsk);
+app.get("/api/v1/accounts/:accountId/asks", itemController.getItem);
+app.post("/api/v1/accounts/:accountId/asks", userController.placeAsk);
+app.get("/api/v1/accounts/:accountId/asks/:askId", userController.getAsk);
+app.put("/api/v1/accounts/:accountId/asks/:askId", userController.updateAsk);
+app.delete("/api/v1/accounts/:accountId/asks/:askId", userController.deleteAsk);
 
 /**
  * API examples routes.
