@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt-nodejs";
 import crypto from "crypto";
 import mongoose from "mongoose";
-import { Bid, BidDocument } from "./Bid";
-import { Ask, AskDocument } from "./Ask";
+import { Bid, BidDocument, bidSchema } from "./Bid";
+import { Ask, AskDocument, askSchema } from "./Ask";
 import { Item, ItemDocument } from "./Item";
 
 export type UserDocument = mongoose.Document & {
@@ -64,11 +64,11 @@ const userSchema = new mongoose.Schema({
         ref: "item"
     }],
     bids: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: bidSchema,
         ref: "bid"
     }],
     asks: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: askSchema,
         ref: "ask"
     }],
 
