@@ -475,14 +475,14 @@ export const getAsk = async (req: Request, res: Response) => {
     try {
         const transactionResults = await session.withTransaction(async () => {
 
-            const userAsk = User.findOne(
-                { _id: req.params.accountId, asks: { _id: req.params.askId } },
+            const userAsk = await User.findOne(
+                { _id: req.params.accountId, "asks._id": req.params.askId },
                 null,
                 { session }
             );
             
-            const itemAsk = Item.findOne(
-                { _id: req.body.itemId, asks: { _id: req.params.askId } },
+            const itemAsk = await Item.findOne(
+                { _id: req.body.itemId, "asks._id": req.params.askId },
                 null,
                 { session }
             );
@@ -496,8 +496,9 @@ export const getAsk = async (req: Request, res: Response) => {
                 await session.abortTransaction();
                 logger.error("Can't find ask for item");
             }
-
-            logger.info(`Ask ${(await userAsk).toJSON} found in the User and Item collection.`);
+            
+            logger.info(`Ask ${req.params.askId} found in the User and Item collection.`);
+            return res.json(userAsk.asks.filter(x => x._id == req.params.askId));
             
         }, transactionOptions);
 
@@ -745,14 +746,14 @@ export const getBid = async (req: Request, res: Response) => {
     try {
         const transactionResults = await session.withTransaction(async () => {
 
-            const userBid = User.findOne(
-                { _id: req.params.accountId, bids: { _id: req.params.bidId } },
+            const userBid = await User.findOne(
+                { _id: req.params.accountId, "bids._id": req.params.bidId },
                 null,
                 { session }
             );
             
-            const itemBid = Item.findOne(
-                { _id: req.body.itemId, bids: { _id: req.params.bidId } },
+            const itemBid = await Item.findOne(
+                { _id: req.body.itemId, "bids._id": req.params.bidId },
                 null,
                 { session }
             );
@@ -766,8 +767,9 @@ export const getBid = async (req: Request, res: Response) => {
                 await session.abortTransaction();
                 logger.error("Can't find bid for item");
             }
-
-            logger.info(`Bid ${(await userBid).toJSON} found in the User and Item collection.`);
+            
+            logger.info(`Bid ${req.params.bidId} found in the User and Item collection.`);
+            return res.json(userBid.bids.filter(x => x._id == req.params.bidId));
             
         }, transactionOptions);
 
