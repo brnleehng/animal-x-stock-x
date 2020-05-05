@@ -525,6 +525,7 @@ export const placeAsk = async (req: Request, res: Response) => {
     askCreateParameter.order.id = req.body.id;
     askCreateParameter.order.createdTime = new Date(req.body.createdTime);
     askCreateParameter.order.userId = req.body.userId;
+    askCreateParameter.order.uniqueEntryId = req.body.uniqueEntryId;
     askCreateParameter.order.state = req.body.state;
     
     const session = await mongoose.startSession();
@@ -597,6 +598,7 @@ export const updateAsk = async (req: Request, res: Response) => {
     askCreateParameter.order.id = req.body.id;
     askCreateParameter.order.createdTime = new Date(req.body.createdTime);
     askCreateParameter.order.userId = req.body.userId;
+    askCreateParameter.order.uniqueEntryId = req.body.uniqueEntryId;
     askCreateParameter.order.state = req.body.state;
 
     const session = await mongoose.startSession();
@@ -796,8 +798,9 @@ export const placeBid = async (req: Request, res: Response) => {
     bidCreateParameter.order.id = req.body.id;
     bidCreateParameter.order.createdTime = new Date(req.body.createdTime);
     bidCreateParameter.order.userId = req.body.userId;
+    bidCreateParameter.order.uniqueEntryId = req.body.uniqueEntryId;
     bidCreateParameter.order.state = req.body.state;
-    
+
     const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
@@ -868,6 +871,7 @@ export const updateBid = async (req: Request, res: Response) => {
     bidCreateParameter.order.id = req.body.id;
     bidCreateParameter.order.createdTime = new Date(req.body.createdTime);
     bidCreateParameter.order.userId = req.body.userId;
+    bidCreateParameter.order.uniqueEntryId = req.body.uniqueEntryId;
     bidCreateParameter.order.state = req.body.state;
 
     const session = await mongoose.startSession();
