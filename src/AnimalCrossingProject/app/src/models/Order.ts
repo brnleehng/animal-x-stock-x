@@ -7,7 +7,7 @@ export type OrderDocument = mongoose.Document & {
     state: string;
 };
 
-const orderSchema = new mongoose.Schema({
+export const orderSchema = new mongoose.Schema({
     id: {type: String, required: true},
     createdTime: {type: Date, required: true},
     userId: {type: String, required: true},

@@ -107,23 +107,15 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
 // Item Operations
 app.get("/api/v1/items", itemController.listItems);
 app.post("/api/v1/items", itemController.createItem);
-app.get("/api/v1/items/:id", itemController.getItem);
-app.put("/api/v1/items/:id", itemController.updateItem);
-app.delete("/api/v1/items/:id", itemController.deleteItem);
+app.get("/api/v1/items/:itemId", itemController.getItem);
+app.put("/api/v1/items/:itemId", itemController.updateItem);
+app.delete("/api/v1/items/:itemId", itemController.deleteItem);
 
 // Bid Operations
 app.get("/api/v1/items/:id/bids", itemController.getItem);
-app.post("/api/v1/items/:id/bids/:bidId", itemController.placeBid);
-app.get("/api/v1/items/:id/bids/:bidId", itemController.getBid);
-app.put("/api/v1/items/:id/bids/:bidId", itemController.updateBid);
-app.delete("/api/v1/items/:id/bids/:bidId", itemController.deleteBid);
 
 // Ask Operations
 app.get("/api/v1/items/:id/asks", itemController.getItem);
-app.post("/api/v1/items/:id/asks", itemController.placeAsk);
-app.get("/api/v1/items/:id/asks/:askId", itemController.getAsk);
-app.put("/api/v1/items/:id/asks/:askId", itemController.updateAsk);
-app.delete("/api/v1/items/:id/asks/:askId", itemController.deleteAsk);
 
 // Trade Operations
 app.get("/api/v1/trades", tradeController.listTrades);
@@ -140,18 +132,18 @@ app.delete("/api/v1/accounts/:id", userController.deleteAccount);
 app.put("/api/v1/accounts/:id", userController.updateAccount);
 
 // Account - Bid Operations
-app.get("/api/v1/accounts/:id/bids", itemController.getItem);
-app.post("/api/v1/accounts/:id/bids/:bidId", itemController.placeBid);
-app.get("/api/v1/accounts/:id/bids/:bidId", itemController.getBid);
-app.put("/api/v1/accounts/:id/bids/:bidId", itemController.updateBid);
-app.delete("/api/v1/accounts/:id/bids/:bidId", itemController.deleteBid);
+app.get("/api/v1/accounts/:accountId/bids", itemController.getItem);
+app.post("/api/v1/accounts/:accountId/bids", userController.placeBid);
+app.get("/api/v1/accounts/:accountId/bids/:bidId", userController.getBid);
+app.put("/api/v1/accounts/:accountId/bids/:bidId", userController.updateBid);
+app.delete("/api/v1/accounts/:accountId/bids/:bidId", userController.deleteBid);
 
 // Account - Ask Operations
-app.get("/api/v1/accounts/:id/asks", itemController.getItem);
-app.post("/api/v1/accounts/:id/asks", itemController.placeAsk);
-app.get("/api/v1/accounts/:id/asks/:askId", itemController.getAsk);
-app.put("/api/v1/accounts/:id/asks/:askId", itemController.updateAsk);
-app.delete("/api/v1/accounts/:id/asks/:askId", itemController.deleteAsk);
+app.get("/api/v1/accounts/:accountId/asks", itemController.getItem);
+app.post("/api/v1/accounts/:accountId/asks", userController.placeAsk);
+app.get("/api/v1/accounts/:accountId/asks/:askId", userController.getAsk);
+app.put("/api/v1/accounts/:accountId/asks/:askId", userController.updateAsk);
+app.delete("/api/v1/accounts/:accountId/asks/:askId", userController.deleteAsk);
 
 // Create Items in bulk for intiation
 app.post("/api/v1/acdb", itemController.createItemsBulk);

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { TradeDocument } from "./Trade";
-import { BidDocument } from "./Bid";
-import { AskDocument } from "./Ask";
+import { BidDocument, bidSchema } from "./Bid";
+import { AskDocument, askSchema } from "./Ask";
 import { VariantDocument, variantSchema } from "./Variant";
 import * as acdb from "@nooksbazaar/acdb/items";
 
@@ -87,11 +87,11 @@ const itemSchema = new mongoose.Schema({
         ref: "item"
     }],
     bids: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: bidSchema,
         ref: "bid"
     }],
     asks: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: askSchema,
         ref: "ask"
     }],
 
