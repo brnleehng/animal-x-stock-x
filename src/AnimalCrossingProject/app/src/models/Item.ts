@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 import { TradeDocument } from "./Trade";
-import { BidDocument, bidSchema } from "./Bid";
-import { AskDocument, askSchema } from "./Ask";
 import { VariantDocument, variantSchema } from "./Variant";
 import * as acdb from "@nooksbazaar/acdb/items";
+import { OrderDocument, orderSchema } from "./Order";
 
 /**
  * sourceSheet: Category;
@@ -61,8 +60,7 @@ export type ItemDocument = mongoose.Document & {
     variants: VariantDocument[];
 
     trades: TradeDocument[];
-    bids: BidDocument[];
-    asks: AskDocument[];
+    orders: OrderDocument[];
 };
 
 const itemSchema = new mongoose.Schema({
@@ -86,14 +84,10 @@ const itemSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "item"
     }],
-    bids: [{
-        type: bidSchema,
-        ref: "bid"
-    }],
-    asks: [{
-        type: askSchema,
-        ref: "ask"
-    }],
+   orders: [{
+       type: orderSchema,
+       ref: "order"
+   }],
 
     createdTime: { type: Date },
 }, { timestamps: true });

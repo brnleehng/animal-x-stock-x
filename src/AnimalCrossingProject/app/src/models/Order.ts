@@ -6,10 +6,11 @@ export type OrderDocument = mongoose.Document & {
     userId: string;
     uniqueEntryId: string;
     state: string;
+    orderType: string;
+    price: number;
 };
 
 export const orderSchema = new mongoose.Schema({
-    id: {type: String, required: true},
     createdTime: {type: Date, required: true, default: Date.now},
     userId: {type: String, required: true},
     uniqueEntryId: {type: String, required: true},
@@ -17,7 +18,13 @@ export const orderSchema = new mongoose.Schema({
         type: String,
         enum: ["Active", "Completed", "Inactive"],
         default: "Active"
-    }
+    },
+    orderType: {
+        type: String,
+        enum: ["Ask", "Bid"],
+        required: true
+    },
+    price: {type: Number, required: true}
 }, { timestamps: true });
 
 export const Order = mongoose.model<OrderDocument>("Order", orderSchema);
