@@ -460,6 +460,18 @@ export const getAccountProfile = (req: Request, res: Response) => {
     });
 };
 
+/**
+ * GET /api/v1/accounts/:accountId/orders
+ * Get all order via API
+ */
+export const listOrders = async(req: Request, res: Response) => {
+    User.find({ _id: req.params.accountId }, { "_id": 0, "orders": 1 }, (err, user) => {
+        if (err) {
+            res.send(err);
+        }
+        res.json(user);
+    });
+};
 
 /**
  * GET /api/v1/accounts/:accountId/orders/:orderId
