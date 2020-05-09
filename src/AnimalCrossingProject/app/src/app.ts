@@ -134,6 +134,7 @@ app.put("/api/v1/accounts/:id", userController.updateAccount);
 // Account - Order Operations
 app.post("/api/v1/accounts/:accountId/orders", userController.placeOrder);
 app.get("/api/v1/accounts/:accountId/orders/:orderId", userController.getOrder);
+app.get("/api/v1/accounts/:accountId/orders", userController.listOrders);
 app.put("/api/v1/accounts/:accountId/orders/:orderId", userController.updateOrder);
 app.delete("/api/v1/accounts/:accountId/orders/:orderId", userController.deleteOrder);
 
