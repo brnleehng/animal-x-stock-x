@@ -1,9 +1,8 @@
 import bcrypt from "bcrypt-nodejs";
 import crypto from "crypto";
 import mongoose from "mongoose";
-import { Bid, BidDocument, bidSchema } from "./Bid";
-import { Ask, AskDocument, askSchema } from "./Ask";
 import { Item, ItemDocument } from "./Item";
+import { OrderDocument, orderSchema } from "./Order";
 
 export type UserDocument = mongoose.Document & {
     email: string;
@@ -20,8 +19,7 @@ export type UserDocument = mongoose.Document & {
     createdTime: Date;
 
     inventory: ItemDocument[];
-    bids: BidDocument[];
-    asks: AskDocument[];
+    orders: OrderDocument[];
    
     facebook: string;
     tokens: AuthToken[];
@@ -63,13 +61,9 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "item"
     }],
-    bids: [{
-        type: bidSchema,
-        ref: "bid"
-    }],
-    asks: [{
-        type: askSchema,
-        ref: "ask"
+    orders: [{
+        type: orderSchema,
+        ref: "order"
     }],
 
     facebook: String,

@@ -18,7 +18,7 @@ import { Variant, VariantDocument } from "../models/Variant";
 import { isUndefined } from "util";
 
 /**
- * POST /api/v1/acdb
+ * POST /api/v1/acdb/?max=number
  * Bulk add items to the MongoDB.
  */
 export const createItemsBulk = async (req: Request, res: Response) => {

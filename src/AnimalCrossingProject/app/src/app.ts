@@ -131,19 +131,11 @@ app.get("/api/v1/accounts/:id", userController.getAccountProfile);
 app.delete("/api/v1/accounts/:id", userController.deleteAccount);
 app.put("/api/v1/accounts/:id", userController.updateAccount);
 
-// Account - Bid Operations
-app.get("/api/v1/accounts/:accountId/bids", itemController.getItem);
-app.post("/api/v1/accounts/:accountId/bids", userController.placeBid);
-app.get("/api/v1/accounts/:accountId/bids/:bidId", userController.getBid);
-app.put("/api/v1/accounts/:accountId/bids/:bidId", userController.updateBid);
-app.delete("/api/v1/accounts/:accountId/bids/:bidId", userController.deleteBid);
-
-// Account - Ask Operations
-app.get("/api/v1/accounts/:accountId/asks", itemController.getItem);
-app.post("/api/v1/accounts/:accountId/asks", userController.placeAsk);
-app.get("/api/v1/accounts/:accountId/asks/:askId", userController.getAsk);
-app.put("/api/v1/accounts/:accountId/asks/:askId", userController.updateAsk);
-app.delete("/api/v1/accounts/:accountId/asks/:askId", userController.deleteAsk);
+// Account - Order Operations
+app.post("/api/v1/accounts/:accountId/orders", userController.placeOrder);
+app.get("/api/v1/accounts/:accountId/orders/:orderId", userController.getOrder);
+app.put("/api/v1/accounts/:accountId/orders/:orderId", userController.updateOrder);
+app.delete("/api/v1/accounts/:accountId/orders/:orderId", userController.deleteOrder);
 
 // Create Items in bulk for intiation
 app.post("/api/v1/acdb", itemController.createItemsBulk);
