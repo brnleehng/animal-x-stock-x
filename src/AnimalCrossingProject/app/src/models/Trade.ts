@@ -5,31 +5,31 @@ import { Bid } from "./Bid";
 export const TradeState: Array<string> = ["Active", "Pending", "Completed", "Inactive"];
 
 export type TradeDocument = mongoose.Document & {
-    id: string;
     buyer: string;
     seller: string;
     askId: string;
     bidId: string;
     state: string;
-    price: number;
+    askPrice: number;
+    bidPrice: number;
     createdTime: Date;
     completionTime: Date;
 };
 
-const tradeSchema = new mongoose.Schema({
-    id: {type: String},
+export const tradeSchema = new mongoose.Schema({
     askId: {type: String, required: true},
     bidId: {type: String, required: true},
     seller: {type: String, required: true},
     buyer: {type: String, required: true},
-    price: {type: Number, required: true},
+    askPrice: {type: Number, required: true},
+    bidPrice: {type: Number, required: true},
     state: {
         type: String,
         enum: TradeState,
         default: "Active"
     },
     createdTime: {type: Date},
-    completionTime: {type: Date}
+    completionTime: {type: Date, required: true, default: Date.now}
 }, { timestamps: true });
 
 export const Trade = mongoose.model<TradeDocument>("Trade", tradeSchema);
