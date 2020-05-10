@@ -12,10 +12,11 @@ import { check, sanitize, validationResult } from "express-validator";
 import "../config/passport";
 import { Ask, AskDocument } from "../models/Ask"; 
 import { Bid, BidDocument } from "../models/Bid";
-import { Order } from "../models/Order";
+import { Order, OrderDocument } from "../models/Order";
 import { orderSchema } from "../models/Order";
 import { MONGODB_URI } from "../util/secrets";
 import logger from "../util/logger";
+import { Trade, TradeDocument } from "../models/Trade";
 
 /**
  * GET /login
@@ -461,10 +462,96 @@ export const getAccountProfile = (req: Request, res: Response) => {
 };
 
 /**
+ * Helper function to match orders after each order operation
+ * GET /api/v1/matchOrders
+ */
+
+ export const matchOrders = async (req: Request, res: Response) => {
+     const asks: OrderDocument[] = [];
+     const bids: OrderDocument[] = [];
+     const tradeBatch: TradeDocument[] = [];
+     await Item.findOne({ _id: req.body.itemId, "orders.uniqueEntryId": req.body.uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
+         const orders = item.orders.sort(function(a, b) {
+             if (a.createdTime > b.createdTime) return 1;
+             else if (a.createdTime < b.createdTime) return -1;
+             else return 0;
+         });
+         orders.forEach(function(order) {
+             if (order.orderType === "Ask") asks.push(order);
+             if (order.orderType === "Bid") bids.push(order);
+         });
+
+         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
+            const ask = asks.shift();
+            const bid = bids.shift();
+            const trade = new Trade();
+            trade.buyer = bid.userId;
+            trade.seller = ask.userId;
+            trade.bidId = bid._id;
+            trade.askId = ask._id;
+            trade.state = "Active";
+            trade.askPrice = ask.price;
+            trade.bidPrice = bid.price;
+            tradeBatch.push(trade);
+            logger.info(tradeBatch);
+        }
+        
+     });
+
+     const session = await mongoose.startSession();
+     
+     const transactionOptions: TransactionOptions = {
+        readPreference: "primary",
+        readConcern: { level: "majority"},
+        writeConcern: { w: "majority" }
+    };
+
+    try {
+        const transactionResults = await session.
+        withTransaction(async () => {
+            const itemsUpdateResults = await Item.updateOne(
+                { _id: req.body.itemId },
+                { $addToSet: { trades: { $each: tradeBatch } } },
+                { session, multi: true }
+            );
+            logger.info(`${itemsUpdateResults}`);
+            logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection.`);
+            logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to include the trades.`);
+            
+            const tradeIds: string[] = [];
+            tradeBatch.forEach(trade => tradeIds.push(trade._id));
+            const isTradePlacedResults = await Trade.findOne(
+                { _id: { $in: tradeIds } },
+                null,
+                { session, multi: true }
+            );
+            if (isTradePlacedResults) {
+                await session.abortTransaction();
+                    logger.error("This trade is already placed for this item. The trade could not be created.");
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+            }
+            tradeBatch.forEach(trade => trade.save());
+            logger.info("Updating trades");
+        }, transactionOptions);
+        if (transactionResults !== null) {
+            logger.info("The order was successfully created.");
+            return res.json(tradeBatch);
+        } else {
+            logger.error("The transaction was intentionally aborted.");
+        }
+    } catch (e) {
+        logger.error("The transaction was aborted due to an unexpected error: " + e);
+    } finally {
+        session.endSession();
+    }
+};
+
+/**
  * GET /api/v1/accounts/:accountId/orders
  * Get all order via API
  */
-export const listOrders = async(req: Request, res: Response) => {
+export const listOrders = async (req: Request, res: Response) => {
     User.find({ _id: req.params.accountId }, { "_id": 0, "orders": 1 }, (err, user) => {
         if (err) {
             res.send(err);
