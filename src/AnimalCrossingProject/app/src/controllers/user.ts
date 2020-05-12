@@ -470,7 +470,12 @@ export const getAccountProfile = (req: Request, res: Response) => {
      const asks: OrderDocument[] = [];
      const bids: OrderDocument[] = [];
      const tradeBatch: TradeDocument[] = [];
-     await Item.findOne({ _id: req.body.itemId, "orders.uniqueEntryId": req.body.uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
+     const itemOrders = await Item.findOne({ _id: req.body.itemId, "orders.uniqueEntryId": req.body.uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
+         if (err) {
+             logger.info(err);
+             return;
+         }
+
          const orders = item.orders.sort(function(a, b) {
              if (a.createdTime > b.createdTime) return 1;
              else if (a.createdTime < b.createdTime) return -1;
@@ -493,10 +498,16 @@ export const getAccountProfile = (req: Request, res: Response) => {
             trade.askPrice = ask.price;
             trade.bidPrice = bid.price;
             tradeBatch.push(trade);
+           
             logger.info(tradeBatch);
         }
         
      });
+
+     if (itemOrders === null) {
+        logger.error("No orders found for " + "itemId: " + req.body.itemId + " uniqueEntryId: " + req.body.uniqueEntryId);
+        return;
+     }
 
      const session = await mongoose.startSession();
      
@@ -531,8 +542,77 @@ export const getAccountProfile = (req: Request, res: Response) => {
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
             }
-            tradeBatch.forEach(trade => trade.save());
-            logger.info("Updating trades");
+
+            // TODO: check if this is working
+            logger.info("Saving trades...");
+            for (const trade of tradeBatch) {
+                trade.save({ session });
+            }
+
+            logger.info("Deleting matched orders...");
+
+            for (const trade of tradeBatch) {
+                const userHasAsk = await User.findOne({ _id: trade.seller, "orders._id": trade.askId  }, null, { session } );
+                const userHasBid = await User.findOne({ _id: trade.buyer, "orders._id": trade.bidId  }, null, { session } );
+                const itemHasAsk = await Item.findOne({ _id: req.body.itemId, "orders._id": trade.askId  }, null, { session } );
+                const itemHasBid = await Item.findOne({ _id: req.body.itemId, "orders._id": trade.bidId  }, null, { session } );
+                if (userHasAsk === null) {
+                    await session.abortTransaction();
+                    logger.error("User " + trade.seller + " doesn't have ask " + trade.askId);
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                } 
+                if (userHasBid === null) {
+                    await session.abortTransaction();
+                    logger.error("User " + trade.buyer + " doesn't have bid " + trade.bidId);
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                } 
+                if (itemHasAsk === null) {
+                    await session.abortTransaction();
+                    logger.error("Item " + req.body.itemId + " doesn't have order " + trade.askId);
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                }
+                if (itemHasBid === null) {
+                    await session.abortTransaction();
+                    logger.error("Item " + req.body.itemId + " doesn't have order " + trade.bidId);
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                }
+                logger.info(trade._id);
+                const sellerUpdateResults = await User.updateOne({ _id: trade.seller }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
+                const buyerUpdateResults = await User.updateOne({ _id: trade.buyer }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
+                const itemAskUpdateResults = await Item.updateOne({ _id: req.body.itemId }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
+                const itemBidUpdateResults = await Item.updateOne({ _id: req.body.itemId }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
+                logger.info(itemBidUpdateResults);
+                if (sellerUpdateResults.nModified === 0) {
+                    await session.abortTransaction();
+                    logger.error("Seller trade could not be updated.");
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                }
+                if (buyerUpdateResults.nModified === 0) {
+                    await session.abortTransaction();
+                    logger.error("Buyer trade could not be updated.");
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                }
+                if (itemAskUpdateResults.nModified === 0) {
+                    await session.abortTransaction();
+                    logger.error("Item ask could not be updated.");
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                }
+                if (itemBidUpdateResults.nModified === 0) {
+                    await session.abortTransaction();
+                    logger.error("Item bid could not be updated.");
+                    logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+                    return;
+                }
+
+            }
+
         }, transactionOptions);
         if (transactionResults !== null) {
             logger.info("The order was successfully created.");
@@ -642,6 +722,20 @@ export const placeOrder = async (req: Request, res: Response) => {
 
     try {
         const transactionResults = await session.withTransaction(async () => {
+
+            const userExists = await User.findOne({ _id: req.params.accountId });
+            if (userExists === null) {
+                session.abortTransaction();
+                logger.error("User does not exist");
+                return;
+            }
+
+            const itemExist = await Item.findOne({ _id: req.body.itemId });
+            if (itemExist === null) {
+                session.abortTransaction();
+                logger.error("Item does not exist");
+                return;
+            }
 
             const usersUpdateResults = await User.updateOne(
                 { _id: req.params.accountId },
