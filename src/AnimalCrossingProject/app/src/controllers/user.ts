@@ -460,29 +460,36 @@ export const getAccountProfile = (req: Request, res: Response) => {
 
 /**
  * Helper function to match orders after each order operation
- * 
+ * Matches orders by price-time priority
  */
- export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
-     const asks: OrderDocument[] = [];
-     const bids: OrderDocument[] = [];
-     const tradeBatch: TradeDocument[] = [];
-     const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
-         if (err) {
-             logger.info(err);
-             return;
-         }
+export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
+    const priceTimeSort = function(a: OrderDocument, b: OrderDocument) {
+        if (a.price > b.price) return 1;
+        if (a.price < b.price) return -1;
+        if (a.createdTime > b.createdTime) return 1;
+        if (a.createdTime < b.createdTime) return -1;
+        return 0;
+    };
+    
+    const asks: OrderDocument[] = [];
+    const bids: OrderDocument[] = [];
+    const tradeBatch: TradeDocument[] = [];
 
-         const orders = item.orders.sort(function(a, b) {
-             if (a.createdTime > b.createdTime) return 1;
-             else if (a.createdTime < b.createdTime) return -1;
-             else return 0;
-         });
-         orders.forEach(function(order) {
-             if (order.orderType === "Ask") asks.push(order);
-             if (order.orderType === "Bid") bids.push(order);
-         });
+    const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
+        if (err) {
+            logger.info(err);
+            return;
+        }
 
-         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price && asks[0].userId !== bids[0].userId) {
+        item.orders.forEach(function(order) {
+            if (order.orderType === "Ask") asks.push(order);
+            if (order.orderType === "Bid") bids.push(order);
+        });
+
+        asks.sort(priceTimeSort);
+        bids.sort(priceTimeSort);
+ 
+        while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price && asks[0].userId !== bids[0].userId) {
             const ask = asks.shift();
             const bid = bids.shift();
             const trade = new Trade();
@@ -498,19 +505,19 @@ export const getAccountProfile = (req: Request, res: Response) => {
         
      });
 
-     if (itemOrders === null) {
+    if (itemOrders === null) {
         logger.error("No orders found for " + "itemId: " + itemId + " uniqueEntryId: " + uniqueEntryId);
         return;
-     }
+    }
 
-     if (tradeBatch.length === 0) {
-         logger.info("No orders matched... no trades to make.");
-         return;
-     }
+    if (tradeBatch.length === 0) {
+        logger.info("No orders matched... no trades to make.");
+        return;
+    }
 
-     const session = await mongoose.startSession();
-     
-     const transactionOptions: TransactionOptions = {
+    const session = await mongoose.startSession();
+    
+    const transactionOptions: TransactionOptions = {
         readPreference: "primary",
         readConcern: { level: "majority"},
         writeConcern: { w: "majority" }
@@ -902,7 +909,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
                 { $pull: { "orders": { "_id": req.params.orderId } } },
                 { session, multi: true }
             );
-            if (usersUpdateResults !== null) {
+            if (usersUpdateResults.n > 0) {
                 logger.info(usersUpdateResults);
                 logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
                 logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to delete the order.`);
