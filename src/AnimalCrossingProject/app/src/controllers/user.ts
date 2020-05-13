@@ -7,13 +7,10 @@ import { User, UserDocument, AuthToken } from "../models/User";
 import { Item, ItemDocument } from "../models/Item";
 import { Request, Response, NextFunction, response } from "express";
 import { IVerifyOptions } from "passport-local";
-import { MongoClient, TransactionOptions, WriteError } from "mongodb";
+import { TransactionOptions, WriteError } from "mongodb";
 import { check, sanitize, validationResult } from "express-validator";
 import "../config/passport";
-import { Ask, AskDocument } from "../models/Ask"; 
-import { Bid, BidDocument } from "../models/Bid";
 import { Order, OrderDocument } from "../models/Order";
-import { orderSchema } from "../models/Order";
 import { MONGODB_URI } from "../util/secrets";
 import logger from "../util/logger";
 import { Trade, TradeDocument } from "../models/Trade";
@@ -463,14 +460,13 @@ export const getAccountProfile = (req: Request, res: Response) => {
 
 /**
  * Helper function to match orders after each order operation
- * GET /api/v1/matchOrders
+ * 
  */
-
- export const matchOrders = async (req: Request, res: Response) => {
+ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
      const asks: OrderDocument[] = [];
      const bids: OrderDocument[] = [];
      const tradeBatch: TradeDocument[] = [];
-     const itemOrders = await Item.findOne({ _id: req.body.itemId, "orders.uniqueEntryId": req.body.uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
+     const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
          if (err) {
              logger.info(err);
              return;
@@ -486,7 +482,7 @@ export const getAccountProfile = (req: Request, res: Response) => {
              if (order.orderType === "Bid") bids.push(order);
          });
 
-         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
+         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price && asks[0].userId !== bids[0].userId) {
             const ask = asks.shift();
             const bid = bids.shift();
             const trade = new Trade();
@@ -498,15 +494,18 @@ export const getAccountProfile = (req: Request, res: Response) => {
             trade.askPrice = ask.price;
             trade.bidPrice = bid.price;
             tradeBatch.push(trade);
-           
-            logger.info(tradeBatch);
         }
         
      });
 
      if (itemOrders === null) {
-        logger.error("No orders found for " + "itemId: " + req.body.itemId + " uniqueEntryId: " + req.body.uniqueEntryId);
+        logger.error("No orders found for " + "itemId: " + itemId + " uniqueEntryId: " + uniqueEntryId);
         return;
+     }
+
+     if (tradeBatch.length === 0) {
+         logger.info("No orders matched... no trades to make.");
+         return;
      }
 
      const session = await mongoose.startSession();
@@ -521,7 +520,7 @@ export const getAccountProfile = (req: Request, res: Response) => {
         const transactionResults = await session.
         withTransaction(async () => {
             const itemsUpdateResults = await Item.updateOne(
-                { _id: req.body.itemId },
+                { _id: itemId },
                 { $addToSet: { trades: { $each: tradeBatch } } },
                 { session, multi: true }
             );
@@ -554,8 +553,8 @@ export const getAccountProfile = (req: Request, res: Response) => {
             for (const trade of tradeBatch) {
                 const userHasAsk = await User.findOne({ _id: trade.seller, "orders._id": trade.askId  }, null, { session } );
                 const userHasBid = await User.findOne({ _id: trade.buyer, "orders._id": trade.bidId  }, null, { session } );
-                const itemHasAsk = await Item.findOne({ _id: req.body.itemId, "orders._id": trade.askId  }, null, { session } );
-                const itemHasBid = await Item.findOne({ _id: req.body.itemId, "orders._id": trade.bidId  }, null, { session } );
+                const itemHasAsk = await Item.findOne({ _id: itemId, "orders._id": trade.askId  }, null, { session } );
+                const itemHasBid = await Item.findOne({ _id: itemId, "orders._id": trade.bidId  }, null, { session } );
                 if (userHasAsk === null) {
                     await session.abortTransaction();
                     logger.error("User " + trade.seller + " doesn't have ask " + trade.askId);
@@ -570,22 +569,20 @@ export const getAccountProfile = (req: Request, res: Response) => {
                 } 
                 if (itemHasAsk === null) {
                     await session.abortTransaction();
-                    logger.error("Item " + req.body.itemId + " doesn't have order " + trade.askId);
+                    logger.error("Item " + itemId + " doesn't have order " + trade.askId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
                 if (itemHasBid === null) {
                     await session.abortTransaction();
-                    logger.error("Item " + req.body.itemId + " doesn't have order " + trade.bidId);
+                    logger.error("Item " + itemId + " doesn't have order " + trade.bidId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
-                logger.info(trade._id);
                 const sellerUpdateResults = await User.updateOne({ _id: trade.seller }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
                 const buyerUpdateResults = await User.updateOne({ _id: trade.buyer }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
-                const itemAskUpdateResults = await Item.updateOne({ _id: req.body.itemId }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
-                const itemBidUpdateResults = await Item.updateOne({ _id: req.body.itemId }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
-                logger.info(itemBidUpdateResults);
+                const itemAskUpdateResults = await Item.updateOne({ _id: itemId }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
+                const itemBidUpdateResults = await Item.updateOne({ _id: itemId }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
                 if (sellerUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Seller trade could not be updated.");
@@ -616,7 +613,7 @@ export const getAccountProfile = (req: Request, res: Response) => {
         }, transactionOptions);
         if (transactionResults !== null) {
             logger.info("The order was successfully created.");
-            return res.json(tradeBatch);
+            return tradeBatch.toString();
         } else {
             logger.error("The transaction was intentionally aborted.");
         }
@@ -779,6 +776,8 @@ export const placeOrder = async (req: Request, res: Response) => {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         session.endSession();
+        logger.info("Matching orders...");
+        await matchOrders(req.body.itemId, req.body.uniqueEntryId);
     }
 
 };
@@ -805,6 +804,7 @@ export const updateOrder = async (req: Request, res: Response) => {
 
     const currentUser = User.findOne({ _id: req.params.accountId }, null, { session });
     const userEmail = (await currentUser).email;
+    let uniqueEntryId = "";
 
     try {
         const transactionResults = await session.withTransaction(async () => {
@@ -821,7 +821,7 @@ export const updateOrder = async (req: Request, res: Response) => {
                 { session, multi: true }
             );
             logger.info(usersUpdateResults);
-            if (usersUpdateResults !== null) {
+            if (usersUpdateResults.n > 0) {
                 logger.info(`${usersUpdateResults.n} document(s) found in the User collection with the email address ${userEmail}.`);
                 logger.info(`${usersUpdateResults.nModified} document(s) was/were updated to change the order.`);
             } else {
@@ -839,6 +839,8 @@ export const updateOrder = async (req: Request, res: Response) => {
                 logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                 return;
         }
+
+        uniqueEntryId = isOrderPlacedResults.orders.filter(order => order._id == req.params.orderId)[0].uniqueEntryId;
 
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId, "orders._id": req.params.orderId },
@@ -865,6 +867,8 @@ export const updateOrder = async (req: Request, res: Response) => {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         session.endSession();
+        logger.info("Matching orders...");
+        await matchOrders(req.body.itemId, uniqueEntryId);
     }
 
 };
@@ -888,6 +892,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
         { session }
     );
     const userEmail = (await currentUser).email;
+    let uniqueEntryId: string = "";
 
     try {
         const transactionResults = await session.withTransaction(async () => {
@@ -917,6 +922,8 @@ export const deleteOrder = async (req: Request, res: Response) => {
                 return;
         }
 
+        uniqueEntryId = isOrderPlacedResults.orders.filter(order => order._id == req.params.orderId)[0].uniqueEntryId;
+
         const itemsUpdateResults = await Item.updateOne(
             { _id: req.body.itemId },
             { $pull: { "orders": { "_id": req.params.orderId } } },
@@ -935,6 +942,8 @@ export const deleteOrder = async (req: Request, res: Response) => {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         session.endSession();
+        logger.info("Matching orders...");
+        await matchOrders(req.body.itemId, uniqueEntryId);
     }
 
 };

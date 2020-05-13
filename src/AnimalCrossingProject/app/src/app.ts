@@ -138,9 +138,6 @@ app.get("/api/v1/accounts/:accountId/orders", userController.listOrders);
 app.put("/api/v1/accounts/:accountId/orders/:orderId", userController.updateOrder);
 app.delete("/api/v1/accounts/:accountId/orders/:orderId", userController.deleteOrder);
 
-// Match Orders
-app.get("/api/v1/matchOrders", userController.matchOrders);
-
 // Create Items in bulk for intiation
 app.post("/api/v1/acdb", itemController.createItemsBulk);
 
