@@ -463,12 +463,19 @@ export const getAccountProfile = (req: Request, res: Response) => {
  * Matches orders by price-time priority
  */
 export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
-    const priceTimeSort = function(a: OrderDocument, b: OrderDocument) {
-        if (a.price > b.price) return 1;
-        if (a.price < b.price) return -1;
-        if (a.createdTime > b.createdTime) return 1;
-        if (a.createdTime < b.createdTime) return -1;
-        return 0;
+    const priceTimeSort = function(asc: boolean) {
+        let c = 1;
+        if (asc === false) {
+            c = -1;
+        }
+
+        return function(a: OrderDocument, b: OrderDocument) {
+            if (a.price > b.price) return 1 * c;
+            if (a.price < b.price) return -1 * c;
+            if (a.createdTime > b.createdTime) return 1;
+            if (a.createdTime < b.createdTime) return -1;
+            return 0;
+        };
     };
     
     const asks: OrderDocument[] = [];
@@ -482,14 +489,14 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
         }
 
         item.orders.forEach(function(order) {
-            if (order.orderType === "Ask") asks.push(order);
-            if (order.orderType === "Bid") bids.push(order);
+            if (order.orderType === "Ask" && order.state === "Active") asks.push(order);
+            if (order.orderType === "Bid" && order.state === "Active") bids.push(order);
         });
 
-        asks.sort(priceTimeSort);
-        bids.sort(priceTimeSort);
+        asks.sort(priceTimeSort(true));
+        bids.sort(priceTimeSort(false));
  
-        while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price && asks[0].userId !== bids[0].userId) {
+        while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
             const ask = asks.shift();
             const bid = bids.shift();
             const trade = new Trade();
@@ -549,7 +556,6 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
                     return;
             }
 
-            // TODO: check if this is working
             logger.info("Saving trades...");
             for (const trade of tradeBatch) {
                 trade.save({ session });
@@ -558,6 +564,7 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
             logger.info("Deleting matched orders...");
 
             for (const trade of tradeBatch) {
+                // Create trades
                 const userHasAsk = await User.findOne({ _id: trade.seller, "orders._id": trade.askId  }, null, { session } );
                 const userHasBid = await User.findOne({ _id: trade.buyer, "orders._id": trade.bidId  }, null, { session } );
                 const itemHasAsk = await Item.findOne({ _id: itemId, "orders._id": trade.askId  }, null, { session } );
@@ -586,10 +593,27 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
-                const sellerUpdateResults = await User.updateOne({ _id: trade.seller }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
-                const buyerUpdateResults = await User.updateOne({ _id: trade.buyer }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
-                const itemAskUpdateResults = await Item.updateOne({ _id: itemId }, { $pull: { "orders": { "_id": trade.askId } } }, { session, multi: true });
-                const itemBidUpdateResults = await Item.updateOne({ _id: itemId }, { $pull: { "orders": { "_id": trade.bidId } } }, { session, multi: true });
+                // Update order state
+                const sellerUpdateResults = await User.updateOne(
+                    { _id: trade.seller, "orders._id": trade.askId },
+                    { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
+                    { session, multi: true }
+                );
+                const buyerUpdateResults = await User.updateOne(
+                    { _id: trade.buyer, "orders._id": trade.bidId },
+                    { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
+                    { session, multi: true }
+                );
+                const itemAskUpdateResults = await Item.updateOne(
+                    { _id: itemId, "orders._id": trade.askId },
+                    { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
+                    { session, multi: true }
+                );
+                const itemBidUpdateResults = await Item.updateOne(
+                    { _id: itemId, "orders._id": trade.bidId },
+                    { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
+                    { session, multi: true }
+                );
                 if (sellerUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Seller trade could not be updated.");
