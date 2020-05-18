@@ -11,7 +11,6 @@ import { TransactionOptions, WriteError } from "mongodb";
 import { check, sanitize, validationResult } from "express-validator";
 import "../config/passport";
 import { Order, OrderDocument } from "../models/Order";
-import { MONGODB_URI } from "../util/secrets";
 import logger from "../util/logger";
 import { Trade, TradeDocument } from "../models/Trade";
 
@@ -461,6 +460,8 @@ export const getAccountProfile = (req: Request, res: Response) => {
 /**
  * Helper function to match orders after each order operation
  * Matches orders by price-time priority
+ * TODO: Will get an uncaught error if itemId doesn't map to an item
+ * Catches an error? TypeError: Cannot read property 'get' of undefined
  */
 export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
     const priceTimeSort = function(asc: boolean) {
@@ -481,17 +482,21 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
     const asks: OrderDocument[] = [];
     const bids: OrderDocument[] = [];
     const tradeBatch: TradeDocument[] = [];
-
+    
     const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
         if (err) {
-            logger.info(err);
+            response.status(500);
+            return response.json(err);
+        }
+        if (item == null) {
+            response.status(404);
             return;
         }
 
-        item.orders.forEach(function(order) {
+        for (const order of item.orders) {
             if (order.orderType === "Ask" && order.state === "Active") asks.push(order);
             if (order.orderType === "Bid" && order.state === "Active") bids.push(order);
-        });
+        }
 
         asks.sort(priceTimeSort(true));
         bids.sort(priceTimeSort(false));
@@ -512,14 +517,16 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
         
      });
 
-    if (itemOrders === null) {
+    if (itemOrders == null) {
         logger.error("No orders found for " + "itemId: " + itemId + " uniqueEntryId: " + uniqueEntryId);
-        return;
+        response.status(404);
+        return response.json({ Message: "No orders found for " + "itemId: " + itemId + " uniqueEntryId: " + uniqueEntryId});
     }
 
     if (tradeBatch.length === 0) {
         logger.info("No orders matched... no trades to make.");
-        return;
+        response.status(204);
+        return response.json({ Message: "No orders matched... no trades to make."});
     }
 
     const session = await mongoose.startSession();
@@ -644,12 +651,13 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
         }, transactionOptions);
         if (transactionResults !== null) {
             logger.info("The order was successfully created.");
-            return tradeBatch.toString();
+            response.status(200);
+            return response.json(tradeBatch);
         } else {
             logger.error("The transaction was intentionally aborted.");
         }
     } catch (e) {
-        logger.error("The transaction was aborted due to an unexpected error: " + e);
+        logger.error("Caught an unexpected error: " + e);
     } finally {
         session.endSession();
     }
@@ -660,11 +668,13 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
  * Get all order via API
  */
 export const listOrders = async (req: Request, res: Response) => {
-    User.find({ _id: req.params.accountId }, { "_id": 0, "orders": 1 }, (err, user) => {
+    User.find({ _id: req.params.accountId }, { "_id": 0, "orders": 1 }, (err, orders) => {
         if (err) {
+            res.status(500);
             res.send(err);
         }
-        res.json(user);
+        res.status(200);
+        res.json(orders);
     });
 };
 
@@ -699,23 +709,26 @@ export const getOrder = async (req: Request, res: Response) => {
             if (userOrder === null) {
                 await session.abortTransaction();
                 logger.error("Can't find order for user");
+                return res.status(404);
             }
         
             if (itemOrder === null) {
                 await session.abortTransaction();
                 logger.error("Can't find order for item");
+                return res.status(404);
             }
             
             logger.info(`Order ${req.params.orderId} found in the User and Item collection.`);
+            res.status(200);
             return res.json(userOrder.orders.filter(x => x._id == req.params.orderId));
             
         }, transactionOptions);
 
-        if (transactionResults !== null) {
+        if (transactionResults !== null && transactionResults !== undefined) {
             logger.info("The order was successfully got.");
         } else {
-            // is findOne a transaction?
-            // logger.error("The transaction was intentionally aborted.");
+            res.status(404);
+            res.json({ Message: "The transaction was intentionally aborted." });
         }
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
@@ -730,12 +743,23 @@ export const getOrder = async (req: Request, res: Response) => {
  */
 // CreateTimes will differ between Order made in User and Item collections.. why?
 export const placeOrder = async (req: Request, res: Response) => {
-    const orderCreateParameter = new Order();
-    orderCreateParameter.price = +req.body.price;
-    orderCreateParameter.userId = req.body.userId;
-    orderCreateParameter.uniqueEntryId = req.body.uniqueEntryId;
-    orderCreateParameter.state = req.body.state;
-    orderCreateParameter.orderType = req.body.orderType;
+
+    await check("accountId", "Property 'accountId' cannot be empty").not().isEmpty().run(req);
+    await check("itemId", "Property 'itemId' cannot be empty").not().isEmpty().run(req);
+    await check("price", "Property 'price' cannot be empty").not().isEmpty().run(req);
+    await check("uniqueEntryId", "Property 'uniqueEntryId' cannot be empty").not().isEmpty().run(req);
+    await check("state", "Property 'state' cannot be empty").not().isEmpty().run(req);
+    await check("orderType", "Property 'orderType' cannot be empty").not().isEmpty().run(req);
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        logger.error("[Method:placeOrder][Error]: ", errors);
+        return res.json(errors);
+    }
+
+    const orderCreateParameter = new Order(req.body);
+    orderCreateParameter.userId = req.params.accountId;
     
     const session = await mongoose.startSession();
 
@@ -745,24 +769,36 @@ export const placeOrder = async (req: Request, res: Response) => {
         writeConcern: { w: "majority" }
     };
 
-    const currentUser = User.findOne({ _id: req.params.accountId }, null, { session });
+    const currentUser = User.findOne({ _id: req.params.accountId }, null, { session }, (err, user) => {
+        if (err) {
+            res.status(500);
+            return res.json(err);
+        } 
+        if (user == null) {
+            res.status(404);
+            return res.json({Message : "This user was not found. "});
+        }
+    });
+
     const userEmail = (await currentUser).email;
 
     try {
         const transactionResults = await session.withTransaction(async () => {
 
             const userExists = await User.findOne({ _id: req.params.accountId });
-            if (userExists === null) {
+            if (userExists == null) {
                 session.abortTransaction();
                 logger.error("User does not exist");
-                return;
+                res.status(404);
+                return res.json({ Message: "User does not exist" });
             }
 
-            const itemExist = await Item.findOne({ _id: req.body.itemId });
-            if (itemExist === null) {
+            const itemExist = await Item.findOne({ _id: req.body.itemId, "variants.uniqueEntryId": req.body.uniqueEntryId });
+            if (itemExist == null) {
                 session.abortTransaction();
                 logger.error("Item does not exist");
-                return;
+                res.status(404);
+                return res.json({ Message: "Item does not exist" });
             }
 
             const usersUpdateResults = await User.updateOne(
@@ -797,18 +833,25 @@ export const placeOrder = async (req: Request, res: Response) => {
         logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to include the item order.`);
         }, transactionOptions);
 
-        if (transactionResults !== null) {
+        if (transactionResults !== null && transactionResults !== undefined) {
             logger.info("The order was successfully created.");
+            res.status(200);
             return res.json(orderCreateParameter);
         } else {
             logger.error("The transaction was intentionally aborted.");
+            res.status(404);
+            return res.json({ Message: "The transaction was intentionally aborted." });
         }
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         session.endSession();
         logger.info("Matching orders...");
-        await matchOrders(req.body.itemId, req.body.uniqueEntryId);
+        try {
+            await matchOrders(req.body.itemId, req.body.uniqueEntryId);
+        } catch(e) {
+            logger.error(e);
+        }
     }
 
 };
@@ -818,12 +861,24 @@ export const placeOrder = async (req: Request, res: Response) => {
  * Update order via API
  */
 export const updateOrder = async (req: Request, res: Response) => {
-    const orderCreateParameter = new Order();
-    orderCreateParameter.price = +req.body.price;
-    orderCreateParameter.userId = req.body.userId;
-    orderCreateParameter.uniqueEntryId = req.body.uniqueEntryId;
-    orderCreateParameter.state = req.body.state;
-    orderCreateParameter.orderType = req.body.orderType;
+
+    await check("accountId", "Property 'accountId' cannot be empty").not().isEmpty().run(req);
+    await check("orderId", "Property 'orderId' cannot be empty").not().isEmpty().run(req);
+    await check("itemId", "Property 'itemId' cannot be empty").not().isEmpty().run(req);
+    await check("price", "Property 'price' cannot be empty").not().isEmpty().run(req);
+    await check("uniqueEntryId", "Property 'uniqueEntryId' cannot be empty").not().isEmpty().run(req);
+    await check("state", "Property 'state' cannot be empty").not().isEmpty().run(req);
+    await check("orderType", "Property 'orderType' cannot be empty").not().isEmpty().run(req);
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        logger.error("[Method:updateOrder][Error]: ", errors);
+        return res.json(errors);
+    }
+
+    const orderCreateParameter = new Order(req.body);
+    orderCreateParameter.userId = req.params.accountId;
 
     const session = await mongoose.startSession();
 
@@ -833,7 +888,17 @@ export const updateOrder = async (req: Request, res: Response) => {
         writeConcern: { w: "majority" }
     };
 
-    const currentUser = User.findOne({ _id: req.params.accountId }, null, { session });
+    const currentUser = User.findOne({ _id: req.params.accountId }, null, { session }, (err, user) => {
+        if (err) {
+            res.status(500);
+            return res.json(err);
+        } 
+        if (user == null) {
+            res.status(404);
+            return res.json({Message : "This user was not found. "});
+        }
+    });
+
     const userEmail = (await currentUser).email;
     let uniqueEntryId = "";
 
@@ -864,7 +929,7 @@ export const updateOrder = async (req: Request, res: Response) => {
             null,
             { session }
         );
-        if (isOrderPlacedResults === null) {
+        if (isOrderPlacedResults == null) {
             await session.abortTransaction();
                 logger.error("This order could not be found for this item. The order could not be updated.");
                 logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
@@ -889,17 +954,25 @@ export const updateOrder = async (req: Request, res: Response) => {
         logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to update the order.`);
         }, transactionOptions);
 
-        if (transactionResults !== null) {
+        if (transactionResults !== null && transactionResults !== undefined) {
             logger.info("The order was successfully updated.");
+            res.status(204);
+            return res.json({ Message: "The order was successfully updated." });
         } else {
             logger.error("The transaction was intentionally aborted.");
+            res.status(404);
+            return res.json({ Message: "The transaction was intentionally aborted." });
         }
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         session.endSession();
         logger.info("Matching orders...");
-        await matchOrders(req.body.itemId, uniqueEntryId);
+        try {
+            await matchOrders(req.body.itemId, uniqueEntryId);
+        } catch(e) {
+            logger.error(e);
+        }
     }
 
 };
@@ -917,11 +990,17 @@ export const deleteOrder = async (req: Request, res: Response) => {
         writeConcern: { w: "majority" }
     };
 
-    const currentUser = User.findOne(
-        { _id: req.params.accountId },
-        null,
-        { session }
-    );
+    const currentUser = User.findOne({ _id: req.params.accountId }, null, { session }, (err, user) => {
+        if (err) {
+            res.status(500);
+            return res.json(err);
+        } 
+        if (user == null) {
+            res.status(404);
+            return res.json({Message : "This user was not found. "});
+        }
+    });
+
     const userEmail = (await currentUser).email;
     let uniqueEntryId: string = "";
 
@@ -946,11 +1025,11 @@ export const deleteOrder = async (req: Request, res: Response) => {
             null,
             { session }
         );
-        if (isOrderPlacedResults === null) {
+        if (isOrderPlacedResults == null) {
             await session.abortTransaction();
-                logger.error("This order does not exist for this item. The order could not be deleted.");
-                logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
-                return;
+            logger.error("This order does not exist for this item. The order could not be deleted.");
+            logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
+            return;
         }
 
         uniqueEntryId = isOrderPlacedResults.orders.filter(order => order._id == req.params.orderId)[0].uniqueEntryId;
@@ -964,17 +1043,25 @@ export const deleteOrder = async (req: Request, res: Response) => {
         logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to delete the order.`);
         }, transactionOptions);
 
-        if (transactionResults !== null) {
+        if (transactionResults !== null && transactionResults !== undefined) {
             logger.info("The order was successfully deleted.");
+            res.status(200);
+            return res.json({ message: "Order successfully deleted" });
         } else {
             logger.error("The transaction was intentionally aborted.");
+            res.status(404);
+            return res.json({ message: "The transaction was intentionally aborted." });
         }
     } catch(e) {
         logger.error("The transaction was aborted due to an unexpected error: " + e);
     } finally {
         session.endSession();
         logger.info("Matching orders...");
-        await matchOrders(req.body.itemId, uniqueEntryId);
+        try {
+            await matchOrders(req.body.itemId, uniqueEntryId);
+        } catch(e) {
+            logger.error(e);
+        }
     }
 
 };
