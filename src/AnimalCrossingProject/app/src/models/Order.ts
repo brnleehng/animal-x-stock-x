@@ -4,6 +4,7 @@ export type OrderDocument = mongoose.Document & {
     id: string;
     createdTime: Date;
     userId: string;
+    itemId: string;
     uniqueEntryId: string;
     state: string;
     orderType: string;
@@ -13,6 +14,7 @@ export type OrderDocument = mongoose.Document & {
 export const orderSchema = new mongoose.Schema({
     createdTime: {type: Date, required: true, default: Date.now},
     userId: {type: String, required: true},
+    itemId: {type: String, required: true},
     uniqueEntryId: {type: String, required: true},
     state: {
         type: String,

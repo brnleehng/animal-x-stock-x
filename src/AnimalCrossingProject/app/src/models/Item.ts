@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { TradeDocument } from "./Trade";
+import { TradeDocument, tradeSchema } from "./Trade";
 import { VariantDocument, variantSchema } from "./Variant";
 import * as acdb from "@nooksbazaar/acdb/items";
 import { OrderDocument, orderSchema } from "./Order";
@@ -81,7 +81,7 @@ const itemSchema = new mongoose.Schema({
     },
 
     trades: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: tradeSchema,
         ref: "item"
     }],
    orders: [{
