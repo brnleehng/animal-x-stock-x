@@ -28,8 +28,8 @@ export const tradeSchema = new mongoose.Schema({
         enum: TradeState,
         default: "Active"
     },
-    createdTime: {type: Date},
-    completionTime: {type: Date, required: true, default: Date.now}
+    createdTime: {type: Date, required: true, default: Date.now},
+    completionTime: {type: Date}
 }, { timestamps: true });
 
 export const Trade = mongoose.model<TradeDocument>("Trade", tradeSchema);
