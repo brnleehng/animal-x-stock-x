@@ -755,6 +755,7 @@ export const placeOrder = async (req: Request, res: Response) => {
 
     if (!errors.isEmpty()) {
         logger.error("[Method:placeOrder][Error]: ", errors);
+        res.status(402);
         return res.json(errors);
     }
 
@@ -874,6 +875,7 @@ export const updateOrder = async (req: Request, res: Response) => {
 
     if (!errors.isEmpty()) {
         logger.error("[Method:updateOrder][Error]: ", errors);
+        res.status(402);
         return res.json(errors);
     }
 
