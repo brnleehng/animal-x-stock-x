@@ -5,7 +5,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
-import Row from 'react-bootstrap/Row';
+import Toast from 'react-bootstrap/Toast';
 
 
 interface Props {
@@ -21,7 +21,7 @@ interface State  {
     orderType: string,
     bellsError: string,
     orderTypeError: string
-    orderSuccess: string
+    orderSuccess: boolean
 };
 
 export class Order extends React.Component<Props, State> {
@@ -32,7 +32,7 @@ export class Order extends React.Component<Props, State> {
             orderType: "",
             bellsError: "",
             orderTypeError: "",
-            orderSuccess: ""
+            orderSuccess: false
         };
 
         this.submitOrder = this.submitOrder.bind(this);
@@ -74,6 +74,11 @@ export class Order extends React.Component<Props, State> {
             referrerPolicy: "no-referrer",
             body: JSON.stringify(data)
         });
+        if (res.ok) {
+            this.setState({ orderSuccess: true });
+        } else {
+            this.setState({ orderSuccess: false });
+        }
         return res.json();
 
     }
@@ -81,12 +86,12 @@ export class Order extends React.Component<Props, State> {
     render() {
         return (
             <React.Fragment>
-            <Row className="justify-content-md-center row">
+            <Form.Row className="justify-content-md-center row">
                 <Col xs={6} md={4}>
                     <Image src="https://acnhcdn.com/latest/FtrIcon/FtrCirculator_Remake_0_0.png" rounded />
                     <p>air circulator (white)</p>
                 </Col>
-            </Row>
+            </Form.Row>
             <Form onSubmit={(e: any) => this.submitOrder(e, "http://localhost:3000/api/v1/accounts/5ebcd526604792518c6c5f17/orders", {
                                     itemId: "5eba329ab24f9d563c32c88b",
                                     price: this.state.price,
@@ -140,6 +145,19 @@ export class Order extends React.Component<Props, State> {
                                 Submit Order
                         </Form.Control>
                     </Form.Group>
+                </Form.Row>
+                <Form.Row className="justify-content-md-end row">
+                    {this.state.orderSuccess ?
+                        <Toast>
+                            <Toast.Header>
+                                <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
+                                <strong className="mr-auto">WOOT!</strong>
+                                <small>now</small>
+                            </Toast.Header>
+                            <Toast.Body>Order successfully made!</Toast.Body>
+                        </Toast> : null
+                    } 
+                    
                 </Form.Row>
             </Form>
             </React.Fragment>
