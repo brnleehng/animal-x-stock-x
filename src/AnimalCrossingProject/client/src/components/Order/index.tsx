@@ -46,7 +46,7 @@ export class Order extends React.Component<Props, State> {
 
     async submitOrder(e: any, url: string, data: {}) {
         e.preventDefault();
-        
+
         let bellsError = false;
         let orderTypeError = false;
 
@@ -114,7 +114,7 @@ export class Order extends React.Component<Props, State> {
                         <InputGroup.Prepend>
                         <InputGroup.Text id="inputGroupPrepend">Bells</InputGroup.Text>
                         </InputGroup.Prepend>
-                    <Form.Control onChange={(e) => this.setState({ price: +e.target.value }) } type="text" />
+                    <Form.Control onChange={(e) => this.setState({ price: +e.target.value }) } type="text" disabled={this.state.orderSuccess}/>
                     <p>
                         {this.state.bellsError}
                     </p>
@@ -131,6 +131,7 @@ export class Order extends React.Component<Props, State> {
                             variant="outline-secondary"
                             title= {this.state.orderType || "Select Ask or Bid"}
                             id="input-group-dropdown-2"
+                            disabled={this.state.orderSuccess}
                             >
                             <Dropdown.Item as="button">
                                 <div onClick={(e) => this.selectDropDown(e)}>
@@ -150,34 +151,36 @@ export class Order extends React.Component<Props, State> {
                     </Form.Group>
 
                     <Form.Group as={Col} controlId="formSubmit">
-                        <Form.Control type="submit" as="button">
+                        <Form.Control type="submit" as="button" disabled={this.state.orderSuccess}>
                                 Submit Order
                         </Form.Control>
                     </Form.Group>
                 </Form.Row>
+                </Form>
                 <Form.Row className="justify-content-md-end row">
-                    {this.state.orderSuccess ?
-                        <Toast>
-                            <Toast.Header>
-                                <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
-                                <strong className="mr-auto">WOOT!</strong>
-                            </Toast.Header>
-                        <Toast.Body>
-                            Order successfully made!
-                        </Toast.Body>
-                        <Toast.Body>
-                            Item: air circulator (white)
-                        </Toast.Body>
-                        <Toast.Body>
-                            Bells: {this.state.price}
-                        </Toast.Body>
-                        <Toast.Body>
-                            Order Type: {this.state.orderType}
-                        </Toast.Body>
-                        </Toast> : null
-                    } 
+
+                    <Toast show={this.state.orderSuccess} onClose={() => this.setState({ orderSuccess: false })}>
+                        <Toast.Header>
+                            <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
+                            <strong className="mr-auto">WOOT!</strong>
+                            <small>just now</small>
+                        </Toast.Header>
+                    <Toast.Body>
+                        Order successfully made!
+                    </Toast.Body>
+                    <Toast.Body>
+                        Item: air circulator (white)
+                    </Toast.Body>
+                    <Toast.Body>
+                        Bells: {this.state.price}
+                    </Toast.Body>
+                    <Toast.Body>
+                        Order Type: {this.state.orderType}
+                    </Toast.Body>
+                    </Toast> 
+
                 </Form.Row>
-            </Form>
+            
             </React.Fragment>
         )
     }
