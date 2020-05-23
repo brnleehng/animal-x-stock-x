@@ -47,9 +47,14 @@ export class Order extends React.Component<Props, State> {
     async submitOrder(e: any, url: string, data: {}) {
         e.preventDefault();
         
-        if (!Number.isInteger(this.state.price) || this.state.price < 0) {    
+        let bellsError = false;
+        let orderTypeError = false;
+
+        if (!Number.isInteger(this.state.price) || this.state.price < 1) {    
             e.stopPropagation();
             this.setState({ bellsError: "Please enter a positive whole number of bells"});
+            this.setState({ orderSuccess: false });
+            bellsError = true;
         } else {
             this.setState({ bellsError: "" });
         }
@@ -57,8 +62,14 @@ export class Order extends React.Component<Props, State> {
         if (this.state.orderType === "") {    
             e.stopPropagation();
             this.setState({ orderTypeError: "Please select an order type bid/ask"});
+            this.setState({ orderSuccess: false });
+            orderTypeError = true;
         } else {
             this.setState({ orderTypeError: "" });
+        }
+
+        if (bellsError === true || orderTypeError === true) {
+            return;
         }
 
         const res = await fetch(url, {
@@ -76,9 +87,7 @@ export class Order extends React.Component<Props, State> {
         });
         if (res.ok) {
             this.setState({ orderSuccess: true });
-        } else {
-            this.setState({ orderSuccess: false });
-        }
+        } 
         return res.json();
 
     }
@@ -107,7 +116,7 @@ export class Order extends React.Component<Props, State> {
                         </InputGroup.Prepend>
                     <Form.Control onChange={(e) => this.setState({ price: +e.target.value }) } type="text" />
                     <p>
-                            {this.state.bellsError}
+                        {this.state.bellsError}
                     </p>
                     </InputGroup>
                     </Form.Group>
@@ -136,7 +145,7 @@ export class Order extends React.Component<Props, State> {
                         </DropdownButton>
                         <p>
                             {this.state.orderTypeError}
-                    </p>
+                        </p>
                         </InputGroup>
                     </Form.Group>
 
@@ -152,12 +161,21 @@ export class Order extends React.Component<Props, State> {
                             <Toast.Header>
                                 <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
                                 <strong className="mr-auto">WOOT!</strong>
-                                <small>now</small>
                             </Toast.Header>
-                            <Toast.Body>Order successfully made!</Toast.Body>
+                        <Toast.Body>
+                            Order successfully made!
+                        </Toast.Body>
+                        <Toast.Body>
+                            Item: air circulator (white)
+                        </Toast.Body>
+                        <Toast.Body>
+                            Bells: {this.state.price}
+                        </Toast.Body>
+                        <Toast.Body>
+                            Order Type: {this.state.orderType}
+                        </Toast.Body>
                         </Toast> : null
                     } 
-                    
                 </Form.Row>
             </Form>
             </React.Fragment>
