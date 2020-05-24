@@ -6,14 +6,20 @@ import Image from 'react-bootstrap/Image';
 import Nav from 'react-bootstrap/Nav';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
+import ListGroup from 'react-bootstrap/ListGroup';
 
 interface Props {
-
+    itemId: string,
+    uniqueEntryId: string
 };
 
 interface State {
     showAskModal: boolean,
-    showBidModal: boolean
+    showBidModal: boolean,
+    itemId: string,
+    uniqueEntryId: string,
+    asks: any[],
+    bids: any[]
 };
 
 export class ItemDetail extends React.Component<Props, State> {
@@ -21,11 +27,54 @@ export class ItemDetail extends React.Component<Props, State> {
         super(props);
         this.state = {
             showAskModal: false,
-            showBidModal: false
+            showBidModal: false,
+            itemId: props.itemId,
+            uniqueEntryId: props.uniqueEntryId,
+            asks: [],
+            bids: []
         };
     }
 
+    async getOrders(url: string) {
+        const res = await fetch(url, {
+            method: 'GET',
+            mode: "cors",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+        });
+        return res.json();
+    };
+
+    componentDidMount() {
+        this.getOrders("http://localhost:3000/api/v1/items/5eba329ab24f9d563c32c88b/orders").then(data => this.setState({ 
+            asks: data[0].orders.filter((order: any) => order.orderType === "Ask" && order.state === "Active"),
+            bids: data[0].orders.filter((order: any) => order.orderType === "Bid" && order.state === "Active")
+         }));
+    };
+
     render() {
+        const askList = this.state.asks.map((ask) => 
+                             
+            <ListGroup.Item>
+              {ask.price}
+            </ListGroup.Item>
+            
+        );
+
+        const bidList = this.state.bids.map((bid) => 
+                             
+            <ListGroup.Item>
+                {bid.price}
+            </ListGroup.Item>
+        
+        );
+
         return (
             <Container>
                 <Row className="justify-content-md-center row">
@@ -45,11 +94,15 @@ export class ItemDetail extends React.Component<Props, State> {
                             View Bids
                         </Button>
                     </Col>
-                    <Modal show={this.state.showAskModal} onHide={() => this.setState({ showAskModal: false })}>
+                    <Modal show={this.state.showAskModal} onHide={() => this.setState({ showAskModal: false })} scrollable={true}>
                         <Modal.Header closeButton>
                         <Modal.Title>Open Asks</Modal.Title>
                         </Modal.Header>
-                        <Modal.Body>Woohoo, you're reading this text in a modal!</Modal.Body>
+                        <Modal.Body>
+                            <ListGroup className="list-group-flush">
+                                {askList}
+                            </ListGroup>
+                        </Modal.Body>
                         <Modal.Footer>
                         <Button variant="secondary" onClick={() => this.setState({ showAskModal: false })}>
                             Close
@@ -59,11 +112,15 @@ export class ItemDetail extends React.Component<Props, State> {
                         </Button>
                         </Modal.Footer>
                     </Modal>
-                    <Modal show={this.state.showBidModal} onHide={() => this.setState({ showBidModal: false })}>
+                    <Modal show={this.state.showBidModal} onHide={() => this.setState({ showBidModal: false })} scrollable={true}>
                         <Modal.Header closeButton>
                         <Modal.Title>Open Bids</Modal.Title>
                         </Modal.Header>
-                        <Modal.Body>Woohoo, you're reading this text in a modal!</Modal.Body>
+                        <Modal.Body>
+                            <ListGroup className="list-group-flush">
+                                {bidList}
+                            </ListGroup>
+                        </Modal.Body>
                         <Modal.Footer>
                         <Button variant="secondary" onClick={() => this.setState({ showBidModal: false })}>
                             Close
