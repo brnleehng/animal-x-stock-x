@@ -109,6 +109,7 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
 
 // Item Operations
 app.get("/api/v1/items", itemController.listItems);
+app.get("/api/v1/items/:itemId/orders", itemController.listItemOrders);
 app.post("/api/v1/items", itemController.createItem);
 app.get("/api/v1/items/:itemId", itemController.getItem);
 app.put("/api/v1/items/:itemId", itemController.updateItem);
