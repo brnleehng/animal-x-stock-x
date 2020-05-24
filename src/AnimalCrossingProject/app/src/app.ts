@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 import passport from "passport";
 import bluebird from "bluebird";
 import { MONGODB_URI, SESSION_SECRET } from "./util/secrets";
+import cors from "cors";
 
 const MongoStore = mongo(session);
 
@@ -82,6 +83,8 @@ app.use((req, res, next) => {
 app.use(
     express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
 );
+
+app.use(cors());
 
 /**
  * Primary app routes.

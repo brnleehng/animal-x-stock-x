@@ -7,6 +7,7 @@ import { Contact } from "../Contact";
 import { Home } from "../Home";
 import SignUp from "../SignUp";
 import Login from "../Login";
+import { Order } from "../Order";
 
 import { Layout } from "../Layout";
 
@@ -25,6 +26,7 @@ function App() {
               <Route exact path='/items' component={About}/>
               <Route exact path='/signup' component={SignUp}/>
               <Route exact path='/login' component={Login}/>
+              <Route exact path='/order' component={Order}/>
             </Switch>
           </BrowserRouter>
       </div>
