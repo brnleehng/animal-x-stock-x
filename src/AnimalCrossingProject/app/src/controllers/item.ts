@@ -16,6 +16,7 @@ import * as acdb from "@nooksbazaar/acdb/items";
 import logger from "../util/logger";
 import { Variant, VariantDocument } from "../models/Variant";
 import { isUndefined } from "util";
+import { OrderDocument } from "../models/Order";
 
 /**
  * POST /api/v1/acdb/?max=number
@@ -164,5 +165,20 @@ export const listItems = (req: Request, res: Response) => {
         }
 
         res.json(item);
+    });
+};
+
+/**
+ * GET /api/v1/items/:itemId/orders
+ * List orders for an item
+ */
+export const listItemOrders = (req: Request, res: Response) => {
+    Item.find({ _id: req.params.itemId }, { "_id": 0, "orders": 1 }, (err, orders) => {
+        if (err) {
+            res.status(500);
+            res.send(err);
+        }
+        res.status(200);
+        res.json(orders);
     });
 };

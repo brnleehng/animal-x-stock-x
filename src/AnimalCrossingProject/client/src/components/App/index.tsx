@@ -10,6 +10,7 @@ import Login from "../Login";
 import { Order } from "../Order";
 
 import { Layout } from "../Layout";
+import { ItemDetail } from '../ItemDetail';
 
 function App() {
   return (
@@ -27,6 +28,8 @@ function App() {
               <Route exact path='/signup' component={SignUp}/>
               <Route exact path='/login' component={Login}/>
               <Route exact path='/order' component={Order}/>
+              <Route exact path='/itemDetail' component={ItemDetail}/>
+
             </Switch>
           </BrowserRouter>
       </div>
