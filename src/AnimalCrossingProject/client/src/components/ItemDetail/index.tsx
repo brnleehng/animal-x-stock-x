@@ -7,6 +7,7 @@ import Nav from 'react-bootstrap/Nav';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import ListGroup from 'react-bootstrap/ListGroup';
+import { priceTimeSort } from '../../util/sort';
 
 interface Props {
     itemId: string,
@@ -53,26 +54,22 @@ export class ItemDetail extends React.Component<Props, State> {
 
     componentDidMount() {
         this.getOrders("http://localhost:3000/api/v1/items/5eba329ab24f9d563c32c88b/orders").then(data => this.setState({ 
-            asks: data[0].orders.filter((order: any) => order.orderType === "Ask" && order.state === "Active"),
-            bids: data[0].orders.filter((order: any) => order.orderType === "Bid" && order.state === "Active")
+            asks: data[0].orders.sort(priceTimeSort(true)).filter((order: any) => order.orderType === "Ask" && order.state === "Active"),
+            bids: data[0].orders.sort(priceTimeSort(false)).filter((order: any) => order.orderType === "Bid" && order.state === "Active")
          }));
     };
 
     render() {
-        const askList = this.state.asks.map((ask) => 
-                             
+        const askList = this.state.asks.map((ask) =>                          
             <ListGroup.Item>
               {ask.price}
-            </ListGroup.Item>
-            
+            </ListGroup.Item>       
         );
 
-        const bidList = this.state.bids.map((bid) => 
-                             
+        const bidList = this.state.bids.map((bid) =>                         
             <ListGroup.Item>
                 {bid.price}
             </ListGroup.Item>
-        
         );
 
         return (
