@@ -13,7 +13,7 @@ import "../config/passport";
 import { Order, OrderDocument } from "../models/Order";
 import logger from "../util/logger";
 import { Trade, TradeDocument } from "../models/Trade";
-
+import { priceTimeSort } from "../util/sort";
 /**
  * GET /login
  * Login page.
@@ -464,21 +464,6 @@ export const getAccountProfile = (req: Request, res: Response) => {
  * Catches an error? TypeError: Cannot read property 'get' of undefined
  */
 export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
-    const priceTimeSort = function(asc: boolean) {
-        let c = 1;
-        if (asc === false) {
-            c = -1;
-        }
-
-        return function(a: OrderDocument, b: OrderDocument) {
-            if (a.price > b.price) return 1 * c;
-            if (a.price < b.price) return -1 * c;
-            if (a.createdTime > b.createdTime) return 1;
-            if (a.createdTime < b.createdTime) return -1;
-            return 0;
-        };
-    };
-    
     const asks: OrderDocument[] = [];
     const bids: OrderDocument[] = [];
     const tradeBatch: TradeDocument[] = [];
