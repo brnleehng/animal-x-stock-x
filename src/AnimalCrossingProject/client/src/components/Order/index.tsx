@@ -26,7 +26,7 @@ interface State  {
 
 export class Order extends React.Component<Props, State> {
     constructor(props: Props) {
-        super(props)
+        super(props);
         this.state = {
             price: -1,
             orderType: "",
@@ -46,7 +46,7 @@ export class Order extends React.Component<Props, State> {
 
     async submitOrder(e: any, url: string, data: {}) {
         e.preventDefault();
-
+        console.log("ORRRDER")
         let bellsError = false;
         let orderTypeError = false;
 

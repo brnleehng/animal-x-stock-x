@@ -3,42 +3,119 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-function SignUp() {
-    
-    return (
-        <Form>
-           <Form.Group controlId="formBasicUsername">
-            <Form.Label>Username</Form.Label>
-            <Form.Control type="text" placeholder="Enter username" />
-          </Form.Group>
-          
-          <Form.Group controlId="formBasicEmail">
-            <Form.Label>Email address</Form.Label>
-            <Form.Control type="email" placeholder="Enter email" />
-            <Form.Text className="text-muted">
-              We'll never share your email with anyone else.
-            </Form.Text>
-          </Form.Group>
-      
-          <Form.Group controlId="formBasicPassword">
-            <Form.Label>Password</Form.Label>
-            <Form.Control type="password" placeholder="Password" />
-          </Form.Group>
+interface Props {
+ 
+};
 
-          <Form.Group controlId="formBasicPasswordConfirmation">
-            <Form.Label>Confirm Password</Form.Label>
-            <Form.Control type="password" placeholder="Confirm Password" />
-          </Form.Group>
+interface State  {
+  username: string,
+  email: string,
+  password: string,
+  confirmPassword: string,
+  signUpSuccess: string
+};
 
-          <Form.Group controlId="formBasicCheckbox">
-            <Form.Check type="checkbox" label="Check me out" />
-          </Form.Group>
-          <Button variant="primary" type="submit">
-            Submit
-          </Button>
-      </Form>
+export class SignUp extends React.Component<Props, State> {
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            username: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            signUpSuccess: "wooot"
+        };
 
-    )
-}
+        this.submitSignUp = this.submitSignUp.bind(this);
+    }
 
-export default SignUp;
+    onChange(e: any) {
+        e.preventDefault();
+
+        if (e.target.name === "username") {
+            this.setState({ username: e.target.value });
+            console.log(this.state.username);
+        } 
+        
+        if (e.target.name === "email") {
+            this.setState({ email: e.target.value });
+        }
+
+        if (e.target.name === "password") {
+            this.setState({ password: e.target.value });
+        }
+
+        if (e.target.name === "confirm_password") {
+            this.setState({ confirmPassword: e.target.value });
+        }
+    }
+
+    async submitSignUp(e: any) {
+        e.preventDefault();
+        console.log("SIGNUPPP");
+        const data = {
+            username: this.state.username,
+            email: this.state.email,
+            password: this.state.password,
+            confirmPassword: this.state.confirmPassword
+        };
+
+        const res = await fetch("http://localhost:3000/signup", {
+            method: 'POST',
+            mode: "cors",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            this.setState({ signUpSuccess: "Fail" });
+        } else {
+            this.setState({ signUpSuccess: "Pass" });
+
+        }
+        return res.json();
+    }
+
+    render() { 
+        return (
+            <Form onSubmit={(e: any) => this.submitSignUp(e).then(data => console.log(data))}>
+            <Form.Group controlId="formBasicUsername">
+                <Form.Label>Username</Form.Label>
+                <Form.Control name="username" type="text" placeholder="Enter username" onChange={(e) => this.onChange(e)} />
+            </Form.Group>
+            
+            <Form.Group controlId="formBasicEmail">
+                <Form.Label>Email address</Form.Label>
+                <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} />
+                <Form.Text className="text-muted">
+                We'll never share your email with anyone else.
+                </Form.Text>
+            </Form.Group>
+        
+            <Form.Group controlId="formBasicPassword">
+                <Form.Label>Password</Form.Label>
+                <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} />
+            </Form.Group>
+
+            <Form.Group controlId="formBasicPasswordConfirmation">
+                <Form.Label>Confirm Password</Form.Label>
+                <Form.Control name="confirm_password" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} />
+            </Form.Group>
+
+            <Form.Group controlId="formSubmit">
+                <Form.Control type="submit" as="button">
+                     Submit Order
+                </Form.Control>
+            </Form.Group>
+            <p> {this.state.signUpSuccess} </p>
+        </Form>
+
+        )
+    } 
+} 

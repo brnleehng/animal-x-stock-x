@@ -85,6 +85,7 @@ export const getSignup = (req: Request, res: Response) => {
  * Create a new local account.
  */
 export const postSignup = async (req: Request, res: Response, next: NextFunction) => {
+    await check("username", "Username is not valid").run(req);
     await check("email", "Email is not valid").isEmail().run(req);
     await check("password", "Password must be at least 4 characters long").isLength({ min: 4 }).run(req);
     await check("confirmPassword", "Passwords do not match").equals(req.body.password).run(req);
@@ -99,14 +100,15 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
     }
 
     const user = new User({
+        username: req.body.username,
         email: req.body.email,
         password: req.body.password
     });
 
-    User.findOne({ email: req.body.email }, (err, existingUser) => {
+    User.findOne({ username: req.body.username, email: req.body.email }, (err, existingUser) => {
         if (err) { return next(err); }
         if (existingUser) {
-            req.flash("errors", { msg: "Account with that email address already exists." });
+            req.flash("errors", { msg: "Account with that username or email address already exists." });
             return res.redirect("/signup");
         }
         user.save((err) => {
