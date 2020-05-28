@@ -6,7 +6,7 @@ import { About } from "../About";
 import { Contact } from "../Contact";
 import { Home } from "../Home";
 import { SignUp } from "../SignUp";
-import Login from "../Login";
+import { Login } from "../Login";
 import { Order } from "../Order";
 
 import { Layout } from "../Layout";
