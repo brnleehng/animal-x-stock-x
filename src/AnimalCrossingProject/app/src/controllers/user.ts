@@ -40,20 +40,32 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        req.flash("errors", errors.array());
-        return res.redirect("/login");
+        logger.error("[Method:postLogin][Error]: ", errors);
+        res.status(422);
+        return res.json(errors);
     }
 
     passport.authenticate("local", (err: Error, user: UserDocument, info: IVerifyOptions) => {
-        if (err) { return next(err); }
+        if (err) { 
+            logger.error("[Method:postLogin][Error]: ", err);
+            return next(err); 
+        }
         if (!user) {
-            req.flash("errors", {msg: info.message});
-            return res.redirect("/login");
+            logger.error("[Method:postLogin][Error]: ", info.message);
+            // req.flash("errors", {msg: info.message});
+            res.status(401);
+            return res.json(info.message);
         }
         req.logIn(user, (err) => {
-            if (err) { return next(err); }
-            req.flash("success", { msg: "Success! You are logged in." });
-            res.redirect(req.session.returnTo || "/");
+            if (err) { 
+                logger.error("[Method:postLogin][Error]: ", err);
+                return next(err); 
+            }
+
+            // req.flash("success", { msg: "Success! You are logged in." });
+            res.status(200);
+            res.json({ Message: "Success! You are logged in." });
+            // res.redirect(req.session.returnTo || "/");
         });
     })(req, res, next);
 };
