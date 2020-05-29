@@ -11,8 +11,7 @@ interface State  {
   username: string,
   email: string,
   password: string,
-  confirmPassword: string,
-  signUpSuccess: string
+  confirmPassword: string
 };
 
 export class SignUp extends React.Component<Props, State> {
@@ -23,10 +22,9 @@ export class SignUp extends React.Component<Props, State> {
             email: "",
             password: "",
             confirmPassword: "",
-            signUpSuccess: "wooot"
         };
 
-        this.submitSignUp = this.submitSignUp.bind(this);
+        this.submitSignup = this.submitSignup.bind(this);
     }
 
     onChange(e: any) {
@@ -50,7 +48,7 @@ export class SignUp extends React.Component<Props, State> {
         }
     }
 
-    async submitSignUp(e: any) {
+    async submitSignup(e: any) {
         e.preventDefault();
         console.log("SIGNUPPP");
         const data = {
@@ -73,18 +71,12 @@ export class SignUp extends React.Component<Props, State> {
             referrerPolicy: "no-referrer",
             body: JSON.stringify(data)
         });
-        if (!res.ok) {
-            this.setState({ signUpSuccess: "Fail" });
-        } else {
-            this.setState({ signUpSuccess: "Pass" });
-
-        }
         return res.json();
     }
 
     render() { 
         return (
-            <Form onSubmit={(e: any) => this.submitSignUp(e).then(data => console.log(data))}>
+            <Form onSubmit={(e: any) => this.submitSignup(e).then(data => console.log(data))}>
             <Form.Group controlId="formBasicUsername">
                 <Form.Label>Username</Form.Label>
                 <Form.Control name="username" type="text" placeholder="Enter username" onChange={(e) => this.onChange(e)} />
@@ -110,10 +102,9 @@ export class SignUp extends React.Component<Props, State> {
 
             <Form.Group controlId="formSubmit">
                 <Form.Control type="submit" as="button">
-                     Submit Order
+                     Create Account
                 </Form.Control>
             </Form.Group>
-            <p> {this.state.signUpSuccess} </p>
         </Form>
 
         )
