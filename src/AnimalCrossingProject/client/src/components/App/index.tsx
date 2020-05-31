@@ -1,6 +1,6 @@
 import React from 'react';
 import './style.css';
-import Header from '../Header';
+import { Header } from '../Header';
 import { BrowserRouter, Route, Link, Switch } from 'react-router-dom';
 import { About } from "../About";
 import { Contact } from "../Contact";
@@ -17,9 +17,10 @@ function App() {
     <React.Fragment>
       <Layout className="Layout">
         <div className="App">
-          <Header />
-
           <BrowserRouter>
+            <Header />
+
+          
             <Switch>
               <Route exact path='/' component={Home}/>
               <Route exact path='/about' component={About}/>

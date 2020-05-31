@@ -1,13 +1,55 @@
 import React from "react";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
-import { About } from "../About";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { BrowserRouter, Route, Link, Switch } from 'react-router-dom';
+import { Redirect } from 'react-router';
 
-function Header() {
+
+interface Props {
+ 
+};
+
+interface State  {
+  isLoggedOut: boolean,
+};
+
+export class Header extends React.Component<Props, State> {
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            isLoggedOut: false
+        };
+    }
+
+    async submitLogout(e: any) {
+        e.preventDefault();
+        console.log("LOGOUT");
     
-    return (
+        const res = await fetch("http://localhost:3000/logout", {
+            method: 'GET',
+            mode: "cors",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+        });
+        if (res.ok) {
+            localStorage.removeItem("user");
+            this.setState({ isLoggedOut: true });
+            window.location.reload();
+        }
+        return res.json();
+    }
+
+    render() {
+        if (this.state.isLoggedOut === true) {
+            return (<Redirect to="/" />); 
+        }
+        return (
             <Navbar bg="light" expand="lg">
             <Navbar.Brand href="/">StalkX</Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -23,13 +65,18 @@ function Header() {
                 </Nav>
 
                 <Nav className="user-action">
-                    <Nav.Link href="/signup">Create Account</Nav.Link>
-                    <Nav.Link href="/login">Login</Nav.Link>
+                    { localStorage.getItem("user") ?
+                        null :
+                        <Nav.Link href="/signup">Create Account</Nav.Link>
+                    }
+                    { localStorage.getItem("user") ? 
+                        <Nav.Link onClick={(e: any) => this.submitLogout(e).then(data => console.log(data))}>Logout</Nav.Link> :
+                        <Nav.Link href="/login">Login</Nav.Link>
+                    }
                 </Nav>
             </Navbar.Collapse>
             </Navbar>
 
-    )
+        )
+    }
 }
-
-export default Header;

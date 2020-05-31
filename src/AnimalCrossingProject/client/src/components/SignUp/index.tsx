@@ -1,7 +1,7 @@
 import React from "react";
 import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Redirect } from 'react-router';
 
 interface Props {
  
@@ -11,7 +11,8 @@ interface State  {
   username: string,
   email: string,
   password: string,
-  confirmPassword: string
+  confirmPassword: string,
+  signupSuccess: boolean
 };
 
 export class SignUp extends React.Component<Props, State> {
@@ -22,6 +23,7 @@ export class SignUp extends React.Component<Props, State> {
             email: "",
             password: "",
             confirmPassword: "",
+            signupSuccess: false
         };
 
         this.submitSignup = this.submitSignup.bind(this);
@@ -71,10 +73,17 @@ export class SignUp extends React.Component<Props, State> {
             referrerPolicy: "no-referrer",
             body: JSON.stringify(data)
         });
+        if (res.ok) {
+            this.setState({ signupSuccess: true });
+            window.location.reload();
+        }
         return res.json();
     }
 
     render() { 
+        if (this.state.signupSuccess === true) {
+            return (<Redirect to="/" />);
+        }
         return (
             <Form onSubmit={(e: any) => this.submitSignup(e).then(data => console.log(data))}>
             <Form.Group controlId="formBasicUsername">

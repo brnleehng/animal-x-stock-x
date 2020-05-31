@@ -2,6 +2,7 @@ import React from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Redirect } from 'react-router';
 
 interface Props {
  
@@ -10,6 +11,7 @@ interface Props {
 interface State  {
   email: string,
   password: string,
+  isLoggedIn: boolean
 };
 
 export class Login extends React.Component<Props, State> {
@@ -18,6 +20,7 @@ export class Login extends React.Component<Props, State> {
     this.state = {
         email: "",
         password: "",
+        isLoggedIn: false
     };
 
     this.submitLogin = this.submitLogin.bind(this);
@@ -56,12 +59,31 @@ export class Login extends React.Component<Props, State> {
         referrerPolicy: "no-referrer",
         body: JSON.stringify(data)
     });
+
+    if (res.ok) {
+      // localStorage.setItem("user", this.state.email);
+      // console.log(localStorage.getItem("user"));
+    }
     return res.json();
   }
 
   render() {
+    if (this.state.isLoggedIn ===  true) {
+      return (<Redirect to="/" />);
+    }
     return (
-      <Form onSubmit={(e: any) => this.submitLogin(e).then(data => console.log(data))}>
+     
+      <Form onSubmit={(e: any) => this.submitLogin(e).then(
+        (data) => {
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+            console.log(JSON.parse(localStorage.getItem("user")!).email);
+            this.setState({ isLoggedIn: true });
+            window.location.reload();
+
+          }
+        })       
+        }>
         <Form.Group controlId="formBasicEmail">
           <Form.Label>Email address</Form.Label>
           <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} />
@@ -75,6 +97,7 @@ export class Login extends React.Component<Props, State> {
         <Button variant="primary" type="submit">
           Submit
         </Button>
+        <p> {localStorage.getItem("user")} </p>
       </Form>
 
     )
