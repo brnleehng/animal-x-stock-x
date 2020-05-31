@@ -64,7 +64,7 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
 
             // req.flash("success", { msg: "Success! You are logged in." });
             res.status(200);
-            res.json({ Message: "Success! You are logged in." });
+            res.json({ Message: "Success! You are logged in.", user: user });
             // res.redirect(req.session.returnTo || "/");
         });
     })(req, res, next);
