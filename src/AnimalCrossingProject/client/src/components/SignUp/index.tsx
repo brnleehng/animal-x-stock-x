@@ -15,6 +15,10 @@ interface State  {
   confirmPassword: string,
   signupSuccess: boolean,
   loginRedirect: boolean
+  usernameError: string,
+  emailError: string,
+  passwordError: string,
+  confirmPasswordError: string
 };
 
 export class SignUp extends React.Component<Props, State> {
@@ -26,7 +30,11 @@ export class SignUp extends React.Component<Props, State> {
             password: "",
             confirmPassword: "",
             signupSuccess: false,
-            loginRedirect: false
+            loginRedirect: false,
+            usernameError: "",
+            emailError: "",
+            passwordError: "",
+            confirmPasswordError: ""
         };
 
         this.submitSignup = this.submitSignup.bind(this);
@@ -76,9 +84,27 @@ export class SignUp extends React.Component<Props, State> {
             referrerPolicy: "no-referrer",
             body: JSON.stringify(data)
         });
+
+        if (res.status === 409) {
+            e.stopPropagation();
+            this.setState({ 
+                usernameError: "Account with username or email already exists",
+                emailError: "Account with username or email already exists"
+            });
+        }
+
+        if (this.state.password.length < 4 || this.state.password !== this.state.confirmPassword) {
+            e.stopPropagation();
+            this.setState({
+                passwordError: "Password must have atleast 4 characters and match confirmation.",
+                confirmPasswordError: "Password must have atleast 4 characters and match confirmation."
+            })
+        }
+
         if (res.ok) {
             this.setState({ signupSuccess: true });
         }
+        
         return res.json();
     }
 
@@ -105,31 +131,50 @@ export class SignUp extends React.Component<Props, State> {
             <Form onSubmit={(e: any) => this.submitSignup(e).then(data => console.log(data))}>
             <Form.Group controlId="formBasicUsername">
                 <Form.Label>Username</Form.Label>
-                <Form.Control name="username" type="text" placeholder="Enter username" onChange={(e) => this.onChange(e)} />
+                <Form.Control name="username" type="text" placeholder="Enter username" onChange={(e) => this.onChange(e)} required />
+                <p>
+                    {this.state.usernameError}
+                </p>
             </Form.Group>
             
             <Form.Group controlId="formBasicEmail">
                 <Form.Label>Email address</Form.Label>
-                <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} />
+                <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} required />
                 <Form.Text className="text-muted">
-                We'll never share your email with anyone else.
+                    We'll never share your email with anyone else.
                 </Form.Text>
+                <p>
+                    {this.state.emailError}
+                </p>
             </Form.Group>
         
             <Form.Group controlId="formBasicPassword">
                 <Form.Label>Password</Form.Label>
-                <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} />
+                <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} required />
+                <Form.Text className="text-muted">
+                    Password length must contain at least 4 characters.
+                </Form.Text>
+                <p>
+                    {this.state.passwordError}
+                </p>
             </Form.Group>
 
             <Form.Group controlId="formBasicPasswordConfirmation">
                 <Form.Label>Confirm Password</Form.Label>
-                <Form.Control name="confirm_password" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} />
+                <Form.Control name="confirm_password" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} required />  
+                <Form.Text className="text-muted">
+                    Must match password.
+                </Form.Text>
+                <p>
+                   {this.state.confirmPasswordError}
+                </p> 
             </Form.Group>
 
             <Form.Group controlId="formSubmit">
                 <Form.Control type="submit" as="button">
                      Create Account
                 </Form.Control>
+              
             </Form.Group>
         </Form>
         </React.Fragment>
