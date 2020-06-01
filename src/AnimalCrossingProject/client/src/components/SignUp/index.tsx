@@ -2,6 +2,7 @@ import React from "react";
 import Form from "react-bootstrap/Form";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Redirect } from 'react-router';
+import Toast from 'react-bootstrap/Toast';
 
 interface Props {
  
@@ -12,7 +13,8 @@ interface State  {
   email: string,
   password: string,
   confirmPassword: string,
-  signupSuccess: boolean
+  signupSuccess: boolean,
+  loginRedirect: boolean
 };
 
 export class SignUp extends React.Component<Props, State> {
@@ -23,7 +25,8 @@ export class SignUp extends React.Component<Props, State> {
             email: "",
             password: "",
             confirmPassword: "",
-            signupSuccess: false
+            signupSuccess: false,
+            loginRedirect: false
         };
 
         this.submitSignup = this.submitSignup.bind(this);
@@ -75,16 +78,30 @@ export class SignUp extends React.Component<Props, State> {
         });
         if (res.ok) {
             this.setState({ signupSuccess: true });
-            window.location.reload();
         }
         return res.json();
     }
 
     render() { 
-        if (this.state.signupSuccess === true) {
-            return (<Redirect to="/" />);
+        if (this.state.loginRedirect === true) {
+            return (
+            <React.Fragment>    
+                <Redirect to="/login" />
+            </React.Fragment>
+            );
         }
         return (
+            <React.Fragment>
+            <Toast show={this.state.signupSuccess} onClose={() => this.setState({ loginRedirect: true })} delay={3000} autohide>
+                <Toast.Header>
+                    <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
+                    <strong className="mr-auto">WOOT!</strong>
+                    <small>Redirecting to login page...</small>
+                </Toast.Header>
+                <Toast.Body>
+                    Signup successful! Please go to login page if not redirected.
+                </Toast.Body>
+            </Toast>
             <Form onSubmit={(e: any) => this.submitSignup(e).then(data => console.log(data))}>
             <Form.Group controlId="formBasicUsername">
                 <Form.Label>Username</Form.Label>
@@ -115,6 +132,7 @@ export class SignUp extends React.Component<Props, State> {
                 </Form.Control>
             </Form.Group>
         </Form>
+        </React.Fragment>
 
         )
     } 
