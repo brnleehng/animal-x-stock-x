@@ -40,16 +40,14 @@ export class Header extends React.Component<Props, State> {
         if (res.ok) {
             localStorage.removeItem("user");
             this.setState({ isLoggedOut: true });
-            window.location.reload();
         }
         return res.json();
     }
 
     render() {
-        if (this.state.isLoggedOut === true) {
-            return (<Redirect to="/" />); 
-        }
         return (
+            <React.Fragment>
+            {this.state.isLoggedOut ? <Redirect to="/" /> : null}
             <Navbar bg="light" expand="lg">
             <Navbar.Brand href="/">StalkX</Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -76,6 +74,7 @@ export class Header extends React.Component<Props, State> {
                 </Nav>
             </Navbar.Collapse>
             </Navbar>
+            </React.Fragment>
 
         )
     }
