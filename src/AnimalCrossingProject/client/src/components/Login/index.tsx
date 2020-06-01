@@ -86,12 +86,12 @@ export class Login extends React.Component<Props, State> {
         }>
         <Form.Group controlId="formBasicEmail">
           <Form.Label>Email address</Form.Label>
-          <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} />
+          <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} required />
         </Form.Group>
         
         <Form.Group controlId="formBasicPassword">
             <Form.Label>Password</Form.Label>
-            <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} />
+            <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} required />
         </Form.Group>
 
         <Button variant="primary" type="submit">
