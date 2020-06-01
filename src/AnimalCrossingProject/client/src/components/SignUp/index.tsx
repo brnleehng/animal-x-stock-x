@@ -104,7 +104,7 @@ export class SignUp extends React.Component<Props, State> {
         if (res.ok) {
             this.setState({ signupSuccess: true });
         }
-        
+
         return res.json();
     }
 
@@ -118,7 +118,10 @@ export class SignUp extends React.Component<Props, State> {
         }
         return (
             <React.Fragment>
-            <Toast show={this.state.signupSuccess} onClose={() => this.setState({ loginRedirect: true })} delay={3000} autohide>
+            
+            <Form onSubmit={(e: any) => this.submitSignup(e).then(data => console.log(data))}>
+            <Form.Group className="justify-content-md-end row">
+            <Toast show={this.state.signupSuccess} onClose={() => this.setState({ loginRedirect: true })} delay={5000} autohide>
                 <Toast.Header>
                     <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
                     <strong className="mr-auto">WOOT!</strong>
@@ -128,10 +131,11 @@ export class SignUp extends React.Component<Props, State> {
                     Signup successful! Please go to login page if not redirected.
                 </Toast.Body>
             </Toast>
-            <Form onSubmit={(e: any) => this.submitSignup(e).then(data => console.log(data))}>
+            </Form.Group>
+
             <Form.Group controlId="formBasicUsername">
                 <Form.Label>Username</Form.Label>
-                <Form.Control name="username" type="text" placeholder="Enter username" onChange={(e) => this.onChange(e)} required />
+                <Form.Control name="username" type="text" placeholder="Enter username" onChange={(e) => this.onChange(e)} disabled={this.state.signupSuccess} required />
                 <p>
                     {this.state.usernameError}
                 </p>
@@ -139,7 +143,7 @@ export class SignUp extends React.Component<Props, State> {
             
             <Form.Group controlId="formBasicEmail">
                 <Form.Label>Email address</Form.Label>
-                <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} required />
+                <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} disabled={this.state.signupSuccess} required />
                 <Form.Text className="text-muted">
                     We'll never share your email with anyone else.
                 </Form.Text>
@@ -150,7 +154,7 @@ export class SignUp extends React.Component<Props, State> {
         
             <Form.Group controlId="formBasicPassword">
                 <Form.Label>Password</Form.Label>
-                <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} required />
+                <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} disabled={this.state.signupSuccess} required />
                 <Form.Text className="text-muted">
                     Password length must contain at least 4 characters.
                 </Form.Text>
@@ -161,7 +165,7 @@ export class SignUp extends React.Component<Props, State> {
 
             <Form.Group controlId="formBasicPasswordConfirmation">
                 <Form.Label>Confirm Password</Form.Label>
-                <Form.Control name="confirm_password" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} required />  
+                <Form.Control name="confirm_password" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} disabled={this.state.signupSuccess} required />  
                 <Form.Text className="text-muted">
                     Must match password.
                 </Form.Text>
