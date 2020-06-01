@@ -124,7 +124,7 @@ export class SignUp extends React.Component<Props, State> {
             <Toast show={this.state.signupSuccess} onClose={() => this.setState({ loginRedirect: true })} delay={5000} autohide>
                 <Toast.Header>
                     <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
-                    <strong className="mr-auto">WOOT!</strong>
+                    <strong className="mr-auto">INFO</strong>
                     <small>Redirecting to login page...</small>
                 </Toast.Header>
                 <Toast.Body>

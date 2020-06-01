@@ -97,7 +97,6 @@ export class Login extends React.Component<Props, State> {
         <Button variant="primary" type="submit">
           Submit
         </Button>
-        <p> {localStorage.getItem("user")} </p>
       </Form>
 
     )
