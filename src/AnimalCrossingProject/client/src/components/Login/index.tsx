@@ -3,6 +3,7 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Redirect } from 'react-router';
+import Toast from 'react-bootstrap/Toast';
 
 interface Props {
  
@@ -11,7 +12,8 @@ interface Props {
 interface State  {
   email: string,
   password: string,
-  isLoggedIn: boolean
+  isLoggedIn: boolean,
+  authError: string
 };
 
 export class Login extends React.Component<Props, State> {
@@ -20,7 +22,8 @@ export class Login extends React.Component<Props, State> {
     this.state = {
         email: "",
         password: "",
-        isLoggedIn: false
+        isLoggedIn: false,
+        authError: ""
     };
 
     this.submitLogin = this.submitLogin.bind(this);
@@ -60,10 +63,16 @@ export class Login extends React.Component<Props, State> {
         body: JSON.stringify(data)
     });
 
-    if (res.ok) {
-      // localStorage.setItem("user", this.state.email);
-      // console.log(localStorage.getItem("user"));
+    // if (res.ok) {
+    //   // localStorage.setItem("user", this.state.email);
+    //   // console.log(localStorage.getItem("user"));
+    // }
+    if (res.status === 401) {
+      this.setState({ authError: "Wrong email or password" });
+    } else if (res.ok) {
+      this.setState({ authError: "" });
     }
+
     return res.json();
   }
 
@@ -97,6 +106,17 @@ export class Login extends React.Component<Props, State> {
         <Button variant="primary" type="submit">
           Submit
         </Button>
+
+        <Toast show={this.state.authError !== ""} onClose={() => this.setState({ authError: "" })} delay={5000} autohide>
+                <Toast.Header>
+                    <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
+                    <strong className="mr-auto">Authentication Error</strong>
+                    <small>Please check email and password...</small>
+                </Toast.Header>
+                <Toast.Body>
+                    {this.state.authError}
+                </Toast.Body>
+            </Toast>
       </Form>
 
     )
