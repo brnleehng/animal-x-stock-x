@@ -11,6 +11,8 @@ import { Order } from "../Order";
 
 import { Layout } from "../Layout";
 import { ItemDetail } from '../ItemDetail';
+import { Forgot } from '../Forgot';
+
 
 function App() {
   return (
@@ -20,7 +22,6 @@ function App() {
           <BrowserRouter>
             <Header />
 
-          
             <Switch>
               <Route exact path='/' component={Home}/>
               <Route exact path='/about' component={About}/>
@@ -30,8 +31,9 @@ function App() {
               <Route exact path='/login' component={Login}/>
               <Route exact path='/order' component={Order}/>
               <Route exact path='/itemDetail' component={ItemDetail}/>
-
+              <Route exact path='/forgot' component={Forgot}/>
             </Switch>
+            
           </BrowserRouter>
       </div>
       </Layout>
