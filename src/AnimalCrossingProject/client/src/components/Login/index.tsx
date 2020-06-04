@@ -4,6 +4,7 @@ import Button from "react-bootstrap/Button";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Redirect } from 'react-router';
 import Toast from 'react-bootstrap/Toast';
+import Nav from 'react-bootstrap/Nav';
 
 interface Props {
  
@@ -103,9 +104,16 @@ export class Login extends React.Component<Props, State> {
             <Form.Control name="password" type="password" placeholder="Password" onChange={(e) => this.onChange(e)} required />
         </Form.Group>
 
-        <Button variant="primary" type="submit">
-          Submit
-        </Button>
+        <Form.Row>
+          <Button variant="primary" type="submit">
+            Submit
+          </Button>
+          <Nav variant="pills" defaultActiveKey="/home" as="button">
+              <Nav.Item>
+                  <Nav.Link href="/forgot">Forgot Password?</Nav.Link>
+              </Nav.Item>
+          </Nav>
+        </Form.Row>
 
         <Toast show={this.state.authError !== ""} onClose={() => this.setState({ authError: "" })} delay={5000} autohide>
                 <Toast.Header>
