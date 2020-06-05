@@ -10,7 +10,8 @@ interface Props {
 
 interface State  {
   email: string,
-  isSubmitted: boolean
+  isSubmitted: boolean,
+  resetInfo: string
 };
 
 export class Forgot extends React.Component<Props, State> {
@@ -18,9 +19,11 @@ export class Forgot extends React.Component<Props, State> {
         super(props)
         this.state = {
             email: "",
-            isSubmitted: false
+            isSubmitted: false,
+            resetInfo: ""
         };
-    
+
+        this.submitForgot = this.submitForgot.bind(this);
     }
 
 
@@ -50,19 +53,33 @@ export class Forgot extends React.Component<Props, State> {
             referrerPolicy: "no-referrer",
             body: JSON.stringify(data)
         });
+
+        if (!res.ok) {
+            console.dir(res.status);
+            this.setState({ resetInfo: "Could not send password reset link to given email." });
+            
+        }
+
+        if (res.ok) {
+            this.setState({ resetInfo: "Password reset link sent! Please check your email." });
+        }
+
+        this.setState({ isSubmitted: true });
         return res.json();
     }
 
     render() {
         return (
-            <Form onSubmit={(e: any) => this.submitForgot(e).then(
-                (data) => {
-                    this.setState({ isSubmitted: true });
-                })       
+            <Form onSubmit={(e: any) => this.submitForgot(e)
+                // .then(
+                // (data) => {
+                //     console.log(data);
+                //     this.setState({ isSubmitted: true });
+                // })       
                 }>
                 <Form.Group controlId="formBasicEmail">
                   <Form.Label>Email address</Form.Label>
-                  <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} required />
+                  <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} disabled={this.state.isSubmitted} required />
                 </Form.Group>
         
                 <Button variant="primary" type="submit">
@@ -72,10 +89,10 @@ export class Forgot extends React.Component<Props, State> {
                 <Toast show={this.state.isSubmitted} onClose={() => this.setState({ isSubmitted: false })} delay={5000} autohide>
                         <Toast.Header>
                             <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
-                            <strong className="mr-auto">Password Reset Link Sent!</strong>
+                            <strong className="mr-auto">Password Reset Info</strong>
                         </Toast.Header>
                         <Toast.Body>
-                            Please check email and follow link...
+                            {this.state.resetInfo}
                         </Toast.Body>
                     </Toast>
               </Form>
