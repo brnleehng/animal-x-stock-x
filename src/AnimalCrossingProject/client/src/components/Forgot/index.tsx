@@ -70,13 +70,7 @@ export class Forgot extends React.Component<Props, State> {
 
     render() {
         return (
-            <Form onSubmit={(e: any) => this.submitForgot(e)
-                // .then(
-                // (data) => {
-                //     console.log(data);
-                //     this.setState({ isSubmitted: true });
-                // })       
-                }>
+            <Form onSubmit={(e: any) => this.submitForgot(e)}>
                 <Form.Group controlId="formBasicEmail">
                   <Form.Label>Email address</Form.Label>
                   <Form.Control name="email" type="email" placeholder="Enter email" onChange={(e) => this.onChange(e)} disabled={this.state.isSubmitted} required />
