@@ -12,6 +12,8 @@ import { Order } from "../Order";
 import { Layout } from "../Layout";
 import { ItemDetail } from '../ItemDetail';
 import { Forgot } from '../Forgot';
+import { Reset } from '../Reset';
+
 
 
 function App() {
@@ -32,8 +34,9 @@ function App() {
               <Route exact path='/order' component={Order}/>
               <Route exact path='/itemDetail' component={ItemDetail}/>
               <Route exact path='/forgot' component={Forgot}/>
+              <Route path='/reset/:token' component={Reset}/>
             </Switch>
-            
+
           </BrowserRouter>
       </div>
       </Layout>
