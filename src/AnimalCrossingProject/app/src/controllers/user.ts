@@ -260,14 +260,18 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
         .findOne({ passwordResetToken: req.params.token })
         .where("passwordResetExpires").gt(Date.now())
         .exec((err, user) => {
-            if (err) { return next(err); }
+            if (err) { 
+                logger.error(`ERROR!! ${err}`);
+                return next(err); }
             if (!user) {
-                req.flash("errors", { msg: "Password reset token is invalid or has expired." });
-                return res.redirect("/forgot");
+                logger.error("USER NOT FOUND!!");
+                res.status(401);
+                res.json({ msg: "Password reset token is invalid or has expired." });
             }
-            res.render("account/reset", {
-                title: "Password Reset"
-            });
+    
+            // res.render("account/reset", {
+            //     title: "Password Reset"
+            // });
         });
 };
 
@@ -398,7 +402,7 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
                 subject: "Reset your password on Hackathon Starter",
                 text: `You are receiving this email because you (or someone else) have requested the reset of the password for your account.\n\n
           Please click on the following link, or paste this into your browser to complete the process:\n\n
-          http://${req.headers.host}/reset/${token}\n\n
+          http://localhost:9000/reset/${token}\n\n
           If you did not request this, please ignore this email and your password will remain unchanged.\n`
             };
             transporter.sendMail(mailOptions, (err) => {
