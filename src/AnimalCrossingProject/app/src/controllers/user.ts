@@ -384,8 +384,9 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
             });
         },
         function sendForgotPasswordEmail(token: AuthToken, user: UserDocument, done: Function) {
+            // TODO: personal gmail is not best practice
             const transporter = nodemailer.createTransport({
-                service: "SendGrid",
+                service: "Gmail",
                 auth: {
                     user: process.env.SENDGRID_USER,
                     pass: process.env.SENDGRID_PASSWORD
