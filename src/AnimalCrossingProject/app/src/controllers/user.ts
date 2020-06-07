@@ -134,6 +134,8 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
                 if (err) {
                     return next(err);
                 }
+                res.status(200);
+                res.json({ Message: "Success! You are signued up.", user: user });
                 res.redirect("/");
             });
         });
@@ -261,10 +263,9 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
         .where("passwordResetExpires").gt(Date.now())
         .exec((err, user) => {
             if (err) { 
-                logger.error(`ERROR!! ${err}`);
-                return next(err); }
+                return next(err);
+            }
             if (!user) {
-                logger.error("USER NOT FOUND!!");
                 res.status(401);
                 res.json({ msg: "Password reset token is invalid or has expired." });
             }
@@ -286,8 +287,9 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        req.flash("errors", errors.array());
-        return res.redirect("back");
+        logger.error("[Method:postReset][Error]: ", errors);
+        res.status(422);
+        return res.json(errors);
     }
 
     async.waterfall([
@@ -305,7 +307,9 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
                     user.passwordResetToken = undefined;
                     user.passwordResetExpires = undefined;
                     user.save((err: WriteError) => {
-                        if (err) { return next(err); }
+                        if (err) { 
+                            return next(err);
+                        }
                         req.logIn(user, (err) => {
                             done(err, user);
                         });
@@ -314,7 +318,7 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
         },
         function sendResetPasswordEmail(user: UserDocument, done: Function) {
             const transporter = nodemailer.createTransport({
-                service: "SendGrid",
+                service: "Gmail",
                 auth: {
                     user: process.env.SENDGRID_USER,
                     pass: process.env.SENDGRID_PASSWORD
@@ -333,7 +337,8 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
         }
     ], (err) => {
         if (err) { return next(err); }
-        res.redirect("/");
+        res.status(200);
+        res.json({ Message: "Success! Your password was reset." });
     });
 };
 
@@ -362,8 +367,9 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-        req.flash("errors", errors.array());
-        return res.redirect("/forgot");
+        logger.error("[Method:postForgot][Error]: ", errors);
+        res.status(422);
+        return res.json(errors);
     }
 
     async.waterfall([
@@ -399,7 +405,7 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
             const mailOptions = {
                 to: user.email,
                 from: "hackathon@starter.com",
-                subject: "Reset your password on Hackathon Starter",
+                subject: "Reset your password on StalkX",
                 text: `You are receiving this email because you (or someone else) have requested the reset of the password for your account.\n\n
           Please click on the following link, or paste this into your browser to complete the process:\n\n
           http://localhost:9000/reset/${token}\n\n
