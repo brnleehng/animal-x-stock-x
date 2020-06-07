@@ -267,9 +267,10 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
             }
             if (!user) {
                 res.status(401);
-                res.json({ msg: "Password reset token is invalid or has expired." });
+                return res.json({ msg: "Password reset token is invalid or has expired." });
             }
-    
+            res.status(200);
+            return res.json({ msg: "Password reset token is valid." });
             // res.render("account/reset", {
             //     title: "Password Reset"
             // });
