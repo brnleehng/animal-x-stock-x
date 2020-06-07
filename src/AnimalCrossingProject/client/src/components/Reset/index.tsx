@@ -13,8 +13,8 @@ interface Props {
 
 interface State  {
   password: string,
-  confirmPassword: string,
-  resetError: string,
+  confirm: string,
+  resetError: string|null,
   invalidToken: boolean,
   token: string
 };
@@ -25,8 +25,8 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
 
     this.state = {
         password: "",
-        confirmPassword: "",
-        resetError: "",
+        confirm: "",
+        resetError: null,
         invalidToken: false,
         token: (this.props.match.params as any).token
     }
@@ -51,8 +51,8 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
         this.setState({ password: e.target.value });
     }
 
-    if (e.target.name === "confirmPassword") {
-        this.setState({ confirmPassword: e.target.value });
+    if (e.target.name === "confirm") {
+        this.setState({ confirm: e.target.value });
     }
   }
 
@@ -83,9 +83,9 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
     console.log("RESET");
     const data = {
         password: this.state.password,
-        confirmPassword: this.state.confirmPassword,
+        confirm: this.state.confirm,
     };
-
+    console.log(data);
     const res = await fetch(`http://localhost:3000/reset/${this.state.token}`, {
         method: 'POST',
         mode: "cors",
@@ -110,7 +110,6 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
   }
 
   render() {
-    console.log(`INVALID_TOKEN: ${this.state.invalidToken}`);
     if (this.state.invalidToken === true) {
         return (
           <React.Fragment>    
@@ -118,6 +117,15 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
           </React.Fragment>
         );
     }
+
+    if (this.state.resetError === "") {
+        return (
+        <React.Fragment>    
+            <Redirect to="/login" />
+        </React.Fragment>
+        );
+    }
+
     return (
       
       <Form onSubmit={(e: any) => this.submitReset(e).then(
@@ -134,7 +142,7 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
         
         <Form.Group controlId="formBasicPassword">
             <Form.Label>Confirm Password</Form.Label>
-            <Form.Control name="confirmPassword" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} required />
+            <Form.Control name="confirm" type="password" placeholder="Confirm Password" onChange={(e) => this.onChange(e)} required />
         </Form.Group>
 
         <Form.Row>
@@ -143,18 +151,17 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
           </Button>
         </Form.Row>
 
-        <Toast show={this.state.resetError !== ""} onClose={() => this.setState({ resetError: "" })} delay={5000} autohide>
-                <Toast.Header>
-                    <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
-                    <strong className="mr-auto">Authentication Error</strong>
-                    <small>Please make sure password and confirmPassword match...</small>
-                </Toast.Header>
-                <Toast.Body>
-                    {this.state.resetError}
-                </Toast.Body>
-            </Toast>
+        <Toast show={this.state.resetError != null} onClose={() => this.setState({ resetError: "" })} delay={5000} autohide>
+          <Toast.Header>
+            <img src="holder.js/20x20?text=%20" className="rounded mr-2" alt="" />
+              <strong className="mr-auto">Authentication Error</strong>
+                <small>Please make sure password and confirmPassword match...</small>
+          </Toast.Header>
+            <Toast.Body>
+              {this.state.resetError}
+          </Toast.Body>
+        </Toast>
       </Form>
-
     )
   }
 }
