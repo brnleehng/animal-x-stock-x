@@ -36,6 +36,22 @@ export class ItemDetail extends React.Component<Props, State> {
         };
     }
 
+    async getItem(url: string) {
+        const res = await fetch(url, {
+            method: 'GET',
+            mode: "cors",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+        });
+        return res.json();
+    };
+
     async getOrders(url: string) {
         const res = await fetch(url, {
             method: 'GET',
@@ -53,6 +69,7 @@ export class ItemDetail extends React.Component<Props, State> {
     };
 
     componentDidMount() {
+        
         this.getOrders("http://localhost:3000/api/v1/items/5eba329ab24f9d563c32c88b/orders").then(data => this.setState({ 
             asks: data[0].orders.sort(priceTimeSort(true)).filter((order: any) => order.orderType === "Ask" && order.state === "Active"),
             bids: data[0].orders.sort(priceTimeSort(false)).filter((order: any) => order.orderType === "Bid" && order.state === "Active")

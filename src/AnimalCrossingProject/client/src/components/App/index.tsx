@@ -4,6 +4,7 @@ import Header from '../Header';
 import { BrowserRouter, Route, Link, Switch } from 'react-router-dom';
 import { About } from "../About";
 import { Contact } from "../Contact";
+import { Market } from "../Market";
 import { Home } from "../Home";
 import SignUp from "../SignUp";
 import Login from "../Login";
@@ -24,11 +25,12 @@ function App() {
               <Route exact path='/' component={Home}/>
               <Route exact path='/about' component={About}/>
               <Route exact path='/contact' component={Contact}/>
-              <Route exact path='/items' component={About}/>
+              <Route exact path='/market' component={Market}/>
               <Route exact path='/signup' component={SignUp}/>
               <Route exact path='/login' component={Login}/>
               <Route exact path='/order' component={Order}/>
               <Route exact path='/itemDetail' component={ItemDetail}/>
+              <Route exact path='/market/:id' component={Order}/>
 
             </Switch>
           </BrowserRouter>
