@@ -6,6 +6,8 @@ import Form from 'react-bootstrap/Form';
 import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
 import Toast from 'react-bootstrap/Toast';
+import { RouteComponentProps } from 'react-router';
+
 
 
 interface Props {
@@ -24,8 +26,8 @@ interface State  {
     orderSuccess: boolean
 };
 
-export class Order extends React.Component<Props, State> {
-    constructor(props: Props) {
+export class Order extends React.Component<Props & RouteComponentProps, State> {
+    constructor(props: Props & RouteComponentProps) {
         super(props);
         this.state = {
             price: -1,
@@ -98,7 +100,7 @@ export class Order extends React.Component<Props, State> {
             <Form.Row className="justify-content-md-center row">
                 <Col xs={6} md={4}>
                     <Image src="https://acnhcdn.com/latest/FtrIcon/FtrCirculator_Remake_0_0.png" rounded />
-                    <p>air circulator (white)</p>
+                    <p>{(this.props.location.state as any).itemName}</p>
                 </Col>
             </Form.Row>
             <Form onSubmit={(e: any) => this.submitOrder(e, "http://localhost:3000/api/v1/accounts/5ebcd526604792518c6c5f17/orders", {

@@ -8,6 +8,8 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import { Item } from "../../Market";
 import Card from 'react-bootstrap/Card';
+import { Link } from 'react-router-dom';
+
 
 export class ItemCard extends React.Component<Item> {
     constructor(props: Item) {
@@ -23,7 +25,12 @@ export class ItemCard extends React.Component<Item> {
                 <Card.Title>{this.props.name}</Card.Title>
                 <Card.Text>Lowest Ask</Card.Text>
                 <Card.Text>{this.props.variants[0].sell}</Card.Text>
-                <Card.Link href={link}>Buy</Card.Link>
+                <Card.Link>
+                    <Link to={{
+                        pathname: `${link}`,
+                        state: {itemName: `${this.props.name}`}}
+                    }>Buy</Link>
+                </Card.Link>
             </Card.Body>
             </Card>
         )
