@@ -805,17 +805,17 @@ export const placeOrder = async (req: Request, res: Response) => {
             const userExists = await User.findOne({ _id: req.params.accountId });
             if (userExists == null) {
                 session.abortTransaction();
-                logger.error("User does not exist");
+                logger.error(`User with id: ${req.params.accountId} does not exist`);
                 res.status(404);
-                return res.json({ Message: "User does not exist" });
+                return res.json({ Message: `User with id: ${req.params.accountId} does not exist` });
             }
 
             const itemExist = await Item.findOne({ _id: req.body.itemId, "variants.uniqueEntryId": req.body.uniqueEntryId });
             if (itemExist == null) {
                 session.abortTransaction();
-                logger.error("Item does not exist");
+                logger.error(`Item with id: ${req.body.itemId} and uniqueEntryId: ${req.body.uniqueEntryId} doesn't exist`);
                 res.status(404);
-                return res.json({ Message: "Item does not exist" });
+                return res.json({ Message: `Item with id: ${req.body.itemId} and uniqueEntryId: ${req.body.uniqueEntryId} doesn't exist` });
             }
 
             const usersUpdateResults = await User.updateOne(

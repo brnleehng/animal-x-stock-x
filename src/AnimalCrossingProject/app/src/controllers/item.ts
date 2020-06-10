@@ -161,9 +161,10 @@ export const listItems = (req: Request, res: Response) => {
 
     Item.find({}, (err, item) => {
         if (err) {
+            res.status(500);
             res.send(err);
         }
-
+        res.status(200);
         res.json(item);
     });
 };

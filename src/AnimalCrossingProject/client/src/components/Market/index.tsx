@@ -28,6 +28,7 @@ export interface Variant {
 }
 
 export interface Item {
+    _id: string;
     name: string;
     variant: string;
     sourceSheet: string;
@@ -58,8 +59,8 @@ interface ItemProps {
     variants: number
 };
 
-export class ItemRow extends React.Component<Item> {
-    constructor(props: Item){
+export class ItemRow extends React.Component<Item & Variant> {
+    constructor(props: Item & Variant){
         super(props);
     }
     render() {
@@ -120,8 +121,16 @@ export class Market extends React.Component<MarketProps, MarketState>{
     }
 
     componentDidMount() {
+        const flatData: any[] = [];
         this.listItems("http://localhost:3000/api/v1/items").then(data => {
-            this.setState({ items: data });
+            for (const datum of data) {
+                for (const variant of datum.variants) {
+                    const result = {...variant, ...datum};
+                    flatData.push(result)
+                }
+            }
+
+            this.setState({ items: flatData });
         });
     }
 
@@ -145,7 +154,7 @@ export class Market extends React.Component<MarketProps, MarketState>{
                             </Container>
         </ListGroup.Item>);
         const itemList = this.state.items.map((x) =>{
-            let payload = x as Item;
+            let payload = x as Item & Variant;
             return (
                 <Col className="mt-2 mb-2 mx-auto d-flex align-items-stretch" xs={2.5}>
                     <ItemCard {...payload} />

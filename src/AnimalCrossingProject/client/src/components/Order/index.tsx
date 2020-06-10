@@ -104,10 +104,10 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                 </Col>
             </Form.Row>
             <Form onSubmit={(e: any) => this.submitOrder(e, "http://localhost:3000/api/v1/accounts/5ebcd526604792518c6c5f17/orders", {
-                                    itemId: "5eba329ab24f9d563c32c88b",
+                                    itemId: `${(this.props.location.state as any).itemId}`,
                                     price: this.state.price,
                                     state: "Active",
-                                    uniqueEntryId: "J4inuBziPCSGZNEPM",
+                                    uniqueEntryId: `${(this.props.location.state as any).itemUniqueEntryId}`,
                                     orderType: this.state.orderType
                                 }).then(data => console.log(data))}>
                 <Form.Row>
@@ -171,7 +171,7 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                         Order successfully made!
                     </Toast.Body>
                     <Toast.Body>
-                        Item: air circulator (white)
+                        Item: {(this.props.location.state as any).itemName}
                     </Toast.Body>
                     <Toast.Body>
                         Bells: {this.state.price}
