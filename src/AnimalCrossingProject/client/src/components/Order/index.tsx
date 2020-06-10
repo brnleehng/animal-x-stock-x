@@ -99,7 +99,7 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             <React.Fragment>
             <Form.Row className="justify-content-md-center row">
                 <Col xs={6} md={4}>
-                    <Image src="https://acnhcdn.com/latest/FtrIcon/FtrCirculator_Remake_0_0.png" rounded />
+                    <Image src={(this.props.location.state as any).itemImage} rounded />
                     <p>{(this.props.location.state as any).itemName}</p>
                 </Col>
             </Form.Row>

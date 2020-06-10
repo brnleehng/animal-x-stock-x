@@ -28,8 +28,12 @@ export class ItemCard extends React.Component<Item> {
                 <Card.Link>
                     <Link to={{
                         pathname: `${link}`,
-                        state: {itemName: `${this.props.name}`}}
-                    }>Buy</Link>
+                        state: {
+                            itemName: `${this.props.name}`,
+                            itemVariant: `${this.props.variant}`,
+                            itemImage: `${this.props.variants[0].image}`
+                        }
+                    }}>Buy</Link>
                 </Card.Link>
             </Card.Body>
             </Card>
