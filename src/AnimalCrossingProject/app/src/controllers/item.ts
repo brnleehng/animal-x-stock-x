@@ -19,7 +19,7 @@ import { isUndefined } from "util";
 import { OrderDocument } from "../models/Order";
 
 /**
- * POST /api/v1/acdb/?max=number
+ * POST /api/v1/acdb?max=number
  * Bulk add items to the MongoDB.
  */
 export const createItemsBulk = async (req: Request, res: Response) => {
@@ -151,22 +151,36 @@ export const getItem = (req: Request, res: Response) => {
 };
 
 /**
- * GET /api/v1/items
+ * GET /api/v1/items?search=string
  * List items in a MongoDB.
  */
 export const listItems = (req: Request, res: Response) => {
     if (req.user) {
         return res.redirect("/");
     }
-
-    Item.find({}, (err, item) => {
-        if (err) {
-            res.status(500);
-            res.send(err);
-        }
-        res.status(200);
-        res.json(item);
-    });
+    if (!req.query.search) {    
+        Item.find({}, (err, item) => {
+            if (err) {
+                logger.error("SHIT4");
+                res.status(500);
+                return res.send(err);
+            }
+            logger.error("SHIT3");
+            res.status(200);
+            return res.json(item);
+        });
+    } else {
+        Item.find({ name: {$regex: `.*${req.query.search}.*` }}, (err, item) => {
+            if (err) {
+                logger.error("SHIT1");
+                res.status(500);
+                return res.send(err);
+            }
+            logger.error("SHIT2");
+            res.status(200);
+            return res.json(item);
+        });
+    }
 };
 
 /**
