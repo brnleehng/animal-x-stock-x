@@ -9,6 +9,8 @@ import Button from 'react-bootstrap/Button';
 import Table from 'react-bootstrap/Table';
 import { priceTimeSort } from '../../util/sort';
 import { ItemCard } from "../Item/ItemCard";
+import Form from "react-bootstrap/Form";
+
 
 export interface Variant {
     image: string;
@@ -93,14 +95,18 @@ interface MarketProps {
 }
   
 interface MarketState {
+    keyword: string;
     items: Item[];
+    submitted: boolean|null;
 }
 
 export class Market extends React.Component<MarketProps, MarketState>{
     constructor(props: MarketProps){
         super(props);
         this.state = {
-            items: []
+            keyword: "",
+            items: [],
+            submitted: null
         };
     }
 
@@ -122,15 +128,40 @@ export class Market extends React.Component<MarketProps, MarketState>{
 
     componentDidMount() {
         const flatData: any[] = [];
-        this.listItems("http://localhost:3000/api/v1/items").then(data => {
+        this.listItems(`http://localhost:3000/api/v1/items?search=${this.state.keyword}`).then(data => {
             for (const datum of data) {
                 for (const variant of datum.variants) {
                     const result = {...variant, ...datum};
-                    flatData.push(result)
+                        flatData.push(result);
                 }
             }
-
             this.setState({ items: flatData });
+        });
+    }
+
+    shouldComponentUpdate(nextProps: any, nextState: any) {
+        return this.state.submitted === null || this.state.submitted != nextState.submitted;
+      }
+
+    onChange(e: any) {
+        e.preventDefault();
+    
+        if (e.target.name === "search") {
+            this.setState({ keyword: e.target.value });
+        }
+    }
+
+    submitSearch(e: any) {
+        console.log(this.state.submitted);
+        const flatData: any[] = [];
+        this.listItems(`http://localhost:3000/api/v1/items?search=${this.state.keyword}`).then(data => {
+            for (const datum of data) {
+                for (const variant of datum.variants) {
+                    const result = {...variant, ...datum};
+                        flatData.push(result);
+                }
+            }
+            this.setState({ submitted: !this.state.submitted, items: flatData });
         });
     }
 
@@ -168,7 +199,11 @@ export class Market extends React.Component<MarketProps, MarketState>{
                     <Col><h2>MarketPlace</h2></Col>
                 </Row>
                 <Row>
-                    <Col xs={2}>
+                    <Form inline>
+                        <Form.Control name="search" type="text" placeholder="Search" className="mr-sm-1" onChange={(e: any) => this.onChange(e)}/>
+                        <Button variant="outline-info" onClick={(e: any) => this.submitSearch(e)}>Search</Button>
+                    </Form>
+                    {/* <Col xs={2}>
                         <ListGroup>
                             <ListGroup.Item>Clothing</ListGroup.Item>
                             <ListGroup.Item>Equipments</ListGroup.Item>
@@ -176,21 +211,21 @@ export class Market extends React.Component<MarketProps, MarketState>{
                             <ListGroup.Item>Furniture</ListGroup.Item>
                             <ListGroup.Item>Nature</ListGroup.Item>
                         </ListGroup>
-                    </Col>
+                    </Col> */}
                     <Col xs={10}>
                         <Row className="d-flex justify-content-end">
                             <Col>
-                                <DropdownButton id="dropdown-item-button" size="sm" title="Sort By">
+                                {/* <DropdownButton id="dropdown-item-button" size="sm" title="Sort By">
                                     <Dropdown.Item as="button">Featured</Dropdown.Item>
                                     <Dropdown.Item as="button">Most Popular</Dropdown.Item>
                                     <Dropdown.Item as="button">New Lowest Asks</Dropdown.Item>
-                                </DropdownButton>{' '}
-                                <Button variant="primary" size="sm">
+                                </DropdownButton>{' '} */}
+                                {/* <Button variant="primary" size="sm">
                                     Gallery
                                 </Button>{' '}
                                 <Button variant="secondary" size="sm">
                                     List
-                                </Button>
+                                </Button> */}
                             </Col>
                         </Row>
                         <Row>

@@ -55,10 +55,7 @@ export class Header extends React.Component<Props, State> {
             <Navbar bg="light" expand="lg">
                 <Navbar.Brand href="/">StalkX</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Form inline>
-                    <FormControl type="text" placeholder="Search" className="mr-sm-2" />
-                    <Button variant="outline-info">Search</Button>
-                </Form>
+
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="mr-auto">
                         <Nav.Link href="/market">Market</Nav.Link>
