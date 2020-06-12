@@ -7,8 +7,10 @@ import Col from 'react-bootstrap/Col';
 import Image from 'react-bootstrap/Image';
 import Toast from 'react-bootstrap/Toast';
 import { RouteComponentProps } from 'react-router';
-
-
+import { priceTimeSort } from '../../util/sort';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
 
 interface Props {
     accountId: string,
@@ -22,8 +24,12 @@ interface State  {
     price: number,
     orderType: string,
     bellsError: string,
-    orderTypeError: string
-    orderSuccess: boolean
+    orderTypeError: string,
+    orderSuccess: boolean,
+    asks: any[],
+    bids: any[],
+    showAskModal: boolean,
+    showBidModal: boolean
 };
 
 export class Order extends React.Component<Props & RouteComponentProps, State> {
@@ -34,17 +40,45 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             orderType: "",
             bellsError: "",
             orderTypeError: "",
-            orderSuccess: false
+            orderSuccess: false,
+            asks: [],
+            bids: [],
+            showAskModal: false,
+            showBidModal: false,
         };
 
         this.submitOrder = this.submitOrder.bind(this);
     }
+
+    componentDidMount() {
+        this.getOrders(`http://localhost:3000/api/v1/items/${(this.props.location.state as any).itemId}/orders`).then(data => this.setState({ 
+            asks: data[0].orders.sort(priceTimeSort(true)).filter((order: any) => order.orderType === "Ask" && order.state === "Active" && order.uniqueEntryId === (this.props.location.state as any).itemUniqueEntryId),
+            bids: data[0].orders.sort(priceTimeSort(false)).filter((order: any) => order.orderType === "Bid" && order.state === "Active" && order.uniqueEntryId === (this.props.location.state as any).itemUniqueEntryId)
+         }));
+    };
 
 
     selectDropDown(e: any) {
         e.preventDefault();
         this.setState({ orderType: (e.target as HTMLElement).textContent! });
     }
+
+    async getOrders(url: string) {
+        const res = await fetch(url, {
+            method: 'GET',
+            mode: "cors",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+        });
+        return res.json();
+    };
+
 
     async submitOrder(e: any, url: string, data: {}) {
         e.preventDefault();
@@ -95,6 +129,18 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
     }
 
     render() {
+        const askList = this.state.asks.map((ask) =>                          
+            <ListGroup.Item>
+              {ask.price}
+            </ListGroup.Item>       
+        );
+
+        const bidList = this.state.bids.map((bid) =>                         
+            <ListGroup.Item>
+                {bid.price}
+            </ListGroup.Item>
+        );
+
         return (
             <React.Fragment>
             <Form.Row className="justify-content-md-center row">
@@ -103,6 +149,47 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                     <p>{(this.props.location.state as any).itemName}</p>
                 </Col>
             </Form.Row>
+            <Form.Row>
+                <Modal show={this.state.showAskModal} onHide={() => this.setState({ showAskModal: false })} scrollable={true}>
+                    <Modal.Header closeButton>
+                    <Modal.Title>Open Asks</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <ListGroup className="list-group-flush">
+                            {askList}
+                        </ListGroup>
+                        <ListGroup className="list-group-flush">
+                            {bidList}
+                        </ListGroup>
+                    </Modal.Body>
+                    <Modal.Footer>
+                    <Button variant="secondary" onClick={() => this.setState({ showAskModal: false })}>
+                        Close
+                    </Button>
+                    <Button variant="primary" onClick={() => this.setState({ showAskModal: false })}>
+                        Save Changes
+                    </Button>
+                    </Modal.Footer>
+                </Modal>
+                <Modal show={this.state.showBidModal} onHide={() => this.setState({ showBidModal: false })} scrollable={true}>
+                    <Modal.Header closeButton>
+                    <Modal.Title>Open Bids</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <ListGroup className="list-group-flush">
+                            {bidList}
+                        </ListGroup>
+                    </Modal.Body>
+                    <Modal.Footer>
+                    <Button variant="secondary" onClick={() => this.setState({ showBidModal: false })}>
+                        Close
+                    </Button>
+                    <Button variant="primary" onClick={() => this.setState({ showBidModal: false })}>
+                        Save Changes
+                    </Button>
+                    </Modal.Footer>
+                </Modal>
+            </Form.Row>    
             <Form onSubmit={(e: any) => this.submitOrder(e, "http://localhost:3000/api/v1/accounts/5ebcd526604792518c6c5f17/orders", {
                                     itemId: `${(this.props.location.state as any).itemId}`,
                                     price: this.state.price,
@@ -110,7 +197,43 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                                     uniqueEntryId: `${(this.props.location.state as any).itemUniqueEntryId}`,
                                     orderType: this.state.orderType
                                 }).then(data => console.log(data))}>
+                
+                
                 <Form.Row>
+                    <Form.Group as={Col} controlId="formGridOrderList">
+                        <InputGroup>
+                            <InputGroup.Prepend>
+                            <InputGroup.Text id="inputGroupPrepend">View orders</InputGroup.Text>
+                            </InputGroup.Prepend>
+                        <DropdownButton
+                            as={InputGroup.Append}
+                            variant="outline-secondary"
+                            title= {this.state.orderType || "View Ask or Bid"}
+                            id="input-group-dropdown-2"
+                            disabled={this.state.orderSuccess}
+                            >
+                            <Dropdown.Item as="button">
+                                <div onClick={(e) => {
+                                    e.preventDefault();
+                                    this.setState({ showAskModal: true })}
+                                }>
+                                    Ask
+                                </div>
+                            </Dropdown.Item>
+                            <Dropdown.Item >
+                                <div onClick={(e) => {
+                                    e.preventDefault();
+                                    this.setState({ showBidModal: true })}
+                                }>
+                                    Bid
+                                </div>
+                            </Dropdown.Item>
+                        </DropdownButton>
+                        <p>
+                            {this.state.orderTypeError}
+                        </p>
+                        </InputGroup>
+                    </Form.Group>
                     <Form.Group as={Col} controlId="formGridBells">
                     <InputGroup>
                         <InputGroup.Prepend>
