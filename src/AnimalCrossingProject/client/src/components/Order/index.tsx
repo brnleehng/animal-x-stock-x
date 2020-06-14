@@ -25,6 +25,7 @@ interface State  {
     orderType: string,
     bellsError: string,
     orderTypeError: string,
+    userNotLoggedInError: string,
     orderSuccess: boolean,
     asks: any[],
     bids: any[],
@@ -40,6 +41,7 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             orderType: "",
             bellsError: "",
             orderTypeError: "",
+            userNotLoggedInError: "",
             orderSuccess: false,
             asks: [],
             bids: [],
@@ -80,11 +82,14 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
     };
 
 
-    async submitOrder(e: any, url: string, data: {}) {
+    async submitOrder(e: any, data: {}) {
         e.preventDefault();
         console.log("ORRRDER")
+
+        const userId = JSON.parse(localStorage.getItem("user")!)._id;
         let bellsError = false;
         let orderTypeError = false;
+        let userNotLoggedInError = false;
 
         if (!Number.isInteger(this.state.price) || this.state.price < 1) {    
             e.stopPropagation();
@@ -104,11 +109,18 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             this.setState({ orderTypeError: "" });
         }
 
-        if (bellsError === true || orderTypeError === true) {
+        if (!localStorage.getItem("user")) {
+            e.stopPropagation();
+            this.setState({ userNotLoggedInError: "Please log in before placing order"});
+            this.setState({ orderSuccess: false });
+            userNotLoggedInError = true;
+        }
+
+        if (bellsError === true || orderTypeError === true || userNotLoggedInError === true) {
             return;
         }
 
-        const res = await fetch(url, {
+        const res = await fetch(`http://localhost:3000/api/v1/accounts/${userId}/orders`, {
             method: 'POST',
             mode: "cors",
             cache: "no-cache",
@@ -158,9 +170,6 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                         <ListGroup className="list-group-flush">
                             {askList}
                         </ListGroup>
-                        <ListGroup className="list-group-flush">
-                            {bidList}
-                        </ListGroup>
                     </Modal.Body>
                     <Modal.Footer>
                     <Button variant="secondary" onClick={() => this.setState({ showAskModal: false })}>
@@ -189,15 +198,15 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                     </Button>
                     </Modal.Footer>
                 </Modal>
-            </Form.Row>    
-            <Form onSubmit={(e: any) => this.submitOrder(e, "http://localhost:3000/api/v1/accounts/5ebcd526604792518c6c5f17/orders", {
+            </Form.Row>
+                
+            <Form onSubmit={(e: any) => this.submitOrder(e, {
                                     itemId: `${(this.props.location.state as any).itemId}`,
                                     price: this.state.price,
                                     state: "Active",
                                     uniqueEntryId: `${(this.props.location.state as any).itemUniqueEntryId}`,
                                     orderType: this.state.orderType
                                 }).then(data => console.log(data))}>
-                
                 
                 <Form.Row>
                     <Form.Group as={Col} controlId="formGridOrderList">
@@ -208,7 +217,7 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                         <DropdownButton
                             as={InputGroup.Append}
                             variant="outline-secondary"
-                            title= {this.state.orderType || "View Ask or Bid"}
+                            title= "View Ask or Bid"
                             id="input-group-dropdown-2"
                             disabled={this.state.orderSuccess}
                             >
@@ -229,11 +238,9 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                                 </div>
                             </Dropdown.Item>
                         </DropdownButton>
-                        <p>
-                            {this.state.orderTypeError}
-                        </p>
                         </InputGroup>
                     </Form.Group>
+                    
                     <Form.Group as={Col} controlId="formGridBells">
                     <InputGroup>
                         <InputGroup.Prepend>
@@ -279,6 +286,9 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
                         <Form.Control type="submit" as="button" disabled={this.state.orderSuccess}>
                                 Submit Order
                         </Form.Control>
+                        <p>
+                            {this.state.userNotLoggedInError}
+                        </p>
                     </Form.Group>
                 </Form.Row>
                 </Form>
