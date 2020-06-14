@@ -34,7 +34,7 @@ const mongoUrl = MONGODB_URI;
 mongoose.Promise = bluebird;
 
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
-    () => { console.log("StalkX Mongoos DB Connection Successful"); },
+    () => { console.log(`StalkX Mongoos DB Connection to ${mongoUrl} Successful`); },
 ).catch(err => {
     console.log("MongoDB connection error. Please make sure MongoDB is running. " + err);
     // process.exit();

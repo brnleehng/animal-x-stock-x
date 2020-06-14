@@ -495,6 +495,14 @@ export const getAccountProfile = (req: Request, res: Response) => {
  * Catches an error? TypeError: Cannot read property 'get' of undefined
  */
 export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
+    // Create collection if it doesn't exist. MongoDB cannot create collections for transactions.
+    mongoose.connection.db.listCollections({name: "trades"})
+    .next(function(err, collinfo) {
+        if (!collinfo) {
+            mongoose.connection.db.createCollection("trades");
+        }
+    });
+
     const asks: OrderDocument[] = [];
     const bids: OrderDocument[] = [];
     const tradeBatch: TradeDocument[] = [];
@@ -516,7 +524,7 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
 
         asks.sort(priceTimeSort(true));
         bids.sort(priceTimeSort(false));
- 
+
         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
             const ask = asks.shift();
             const bid = bids.shift();
@@ -666,7 +674,7 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
 
         }, transactionOptions);
         if (transactionResults !== null) {
-            logger.info("The order was successfully created.");
+            logger.info("The trade was was successfully created.");
             response.status(200);
             return response.json(tradeBatch);
         } else {
@@ -846,7 +854,7 @@ export const placeOrder = async (req: Request, res: Response) => {
             { $addToSet: { orders: orderCreateParameter } },
             { session }
         );
-        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the id ${req.params.itemId}.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the id ${req.body.itemId}.`);
         logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to include the item order.`);
         }, transactionOptions);
 
