@@ -60,7 +60,6 @@ export class Header extends React.Component<Props, State> {
                     <Nav className="mr-auto">
                         <Nav.Link href="/market">Market</Nav.Link>
                         <Nav.Link href="/contact">Contact</Nav.Link>
-                        <Nav.Link href="/order">Order</Nav.Link>
                         <Nav.Link href="/itemDetail">Item Detail</Nav.Link>
                         <Nav.Link href="/about">About</Nav.Link>
                     </Nav>

@@ -34,7 +34,7 @@ function App() {
               <Route exact path='/login' component={Login}/>
               <Route exact path='/order' component={Order}/>
               <Route exact path='/itemDetail' component={ItemDetail}/>
-              <Route exact path='/market' component={Order}/>              
+              <Route exact path='/market/:id' component={Order}/>              
               <Route exact path='/forgot' component={Forgot}/>
               <Route path='/reset/:token' component={Reset}/>
             </Switch>

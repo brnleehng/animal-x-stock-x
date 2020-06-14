@@ -152,13 +152,13 @@ export class Market extends React.Component<MarketProps, MarketState>{
     }
 
     submitSearch(e: any) {
-        console.log(this.state.submitted);
+        e.preventDefault();
         const flatData: any[] = [];
         this.listItems(`http://localhost:3000/api/v1/items?search=${this.state.keyword}`).then(data => {
             for (const datum of data) {
                 for (const variant of datum.variants) {
                     const result = {...variant, ...datum};
-                        flatData.push(result);
+                    flatData.push(result);
                 }
             }
             this.setState({ submitted: !this.state.submitted, items: flatData });
@@ -200,7 +200,8 @@ export class Market extends React.Component<MarketProps, MarketState>{
                 </Row>
                 <Row>
                     <Form inline>
-                        <Form.Control name="search" type="text" placeholder="Search" className="mr-sm-1" onChange={(e: any) => this.onChange(e)}/>
+                        {/* if text box is in focus and user presses enter then page will reload... */}
+                        <Form.Control name="search" type="text" placeholder="Search" className="mr-sm-1" onChange={(e: any) => this.onChange(e)} onSubmit={(e: any) => this.onChange(e)}/>
                         <Button variant="outline-info" onClick={(e: any) => this.submitSearch(e)}>Search</Button>
                     </Form>
                     {/* <Col xs={2}>
