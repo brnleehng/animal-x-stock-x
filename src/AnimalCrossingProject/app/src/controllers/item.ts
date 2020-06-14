@@ -170,7 +170,7 @@ export const listItems = (req: Request, res: Response) => {
             return res.json(item);
         });
     } else {
-        Item.find({ name: {$regex: `.*${req.query.search}.*` }}, (err, item) => {
+        Item.find( { name: { $regex: `.*${req.query.search}.*` } }, (err, item) => {
             if (err) {
                 logger.error("SHIT1");
                 res.status(500);

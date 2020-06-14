@@ -124,7 +124,7 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
     ]}, (err, existingUser) => {
         if (err) { return next(err); }
         if (existingUser) {
-            logger.error("[Method:postSignup][Error]: ", err);
+            logger.error("[Method:postSignup][Error]: ", existingUser);
             res.status(409);
             return res.json({Message: `[Method:postSignup][Error]: Account with username ${req.body.username} or email ${req.body.email} already exists`});
         }
@@ -136,7 +136,7 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
                 }
                 res.status(200);
                 res.json({ Message: "Success! You are signued up.", user: user });
-                res.redirect("/");
+                // res.redirect("/");
             });
         });
     });
@@ -1020,7 +1020,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
     });
 
     const userEmail = (await currentUser).email;
-    let uniqueEntryId: string = "";
+    let uniqueEntryId = "";
 
     try {
         const transactionResults = await session.withTransaction(async () => {
