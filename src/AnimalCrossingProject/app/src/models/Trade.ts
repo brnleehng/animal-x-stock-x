@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import { Item } from "./Item";
-import { Bid } from "./Bid";
 
 export const TradeState: Array<string> = ["Active", "Pending", "Completed", "Inactive"];
 
@@ -12,6 +10,8 @@ export type TradeDocument = mongoose.Document & {
     state: string;
     askPrice: number;
     bidPrice: number;
+    itemId: string;
+    uniqueEntryId: string;
     createdTime: Date;
     completionTime: Date;
 };
@@ -28,6 +28,8 @@ export const tradeSchema = new mongoose.Schema({
         enum: TradeState,
         default: "Active"
     },
+    itemId: {type: String, required: true},
+    uniqueEntryId: {type: String, required: true},
     createdTime: {type: Date, required: true, default: Date.now},
     completionTime: {type: Date}
 }, { timestamps: true });
