@@ -14,14 +14,14 @@ export class ItemCard extends React.Component<Item & Variant> {
     }
 
     render() {
-        let link = '/market/' + this.props.name.replace(/\s/g, '-');
+        let link = `/market/${this.props.name.replace(/\s/g, '-')}-${this.getItemVariantInfo(this.props)}`;
         return (
             <Card className="mx-auto" style={{ width: '10rem' }}>
             <Card.Img variant="top" src={this.props.image} />
             <Card.Body>
                 <Card.Title>{`${this.props.name} (${this.getItemVariantInfo(this.props)})`}</Card.Title>
                 <Card.Text>Lowest Ask</Card.Text>
-                <Card.Text>{this.props.variants[0].sell}</Card.Text>
+                <Card.Text>{this.props.sell}</Card.Text>
                 <Card.Link>
                     <Link to={{
                         pathname: `${link}`,
