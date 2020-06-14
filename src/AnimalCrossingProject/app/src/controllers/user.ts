@@ -506,7 +506,7 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
     const asks: OrderDocument[] = [];
     const bids: OrderDocument[] = [];
     const tradeBatch: TradeDocument[] = [];
-    
+
     const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
         if (err) {
             response.status(500);
@@ -525,6 +525,9 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
         asks.sort(priceTimeSort(true));
         bids.sort(priceTimeSort(false));
 
+        console.log(`ASKS: ${asks}`);
+        console.log(`BIDS: ${bids}`);
+
         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
             const ask = asks.shift();
             const bid = bids.shift();
@@ -536,6 +539,8 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
             trade.state = "Active";
             trade.askPrice = ask.price;
             trade.bidPrice = bid.price;
+            trade.itemId = itemId;
+            trade.uniqueEntryId = uniqueEntryId;
             tradeBatch.push(trade);
         }
         
