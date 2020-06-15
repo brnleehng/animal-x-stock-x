@@ -66,10 +66,10 @@ export class Header extends React.Component<Props, State> {
                         <Nav.Link href="/signup">Create Account</Nav.Link>
                     }
                     { localStorage.getItem("user") ?
-                        <div>
+                        <React.Fragment>
                         <Nav.Link href="/profile">Profile</Nav.Link>
                         <Nav.Link onClick={(e: any) => this.submitLogout(e).then(data => console.log(data))}>Logout</Nav.Link>
-                        </div> :
+                        </React.Fragment> :
                         <Nav.Link href="/login">Login</Nav.Link>
                     }
                 </Nav>

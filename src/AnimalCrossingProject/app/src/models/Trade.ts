@@ -3,10 +3,14 @@ import mongoose from "mongoose";
 export const TradeState: Array<string> = ["Active", "Pending", "Completed", "Inactive"];
 
 export type TradeDocument = mongoose.Document & {
-    buyer: string;
-    seller: string;
     askId: string;
     bidId: string;
+    sellerId: string;
+    buyerId: string;
+    sellerName: string;
+    buyerName: string;
+    sellerContact: string;
+    buyerContact: string;
     state: string;
     askPrice: number;
     bidPrice: number;
@@ -19,8 +23,12 @@ export type TradeDocument = mongoose.Document & {
 export const tradeSchema = new mongoose.Schema({
     askId: {type: String, required: true},
     bidId: {type: String, required: true},
-    seller: {type: String, required: true},
-    buyer: {type: String, required: true},
+    sellerId: {type: String, required: true},
+    buyerId: {type: String, required: true},
+    sellerName: {type: String, required: true},
+    buyerName: {type: String, required: true},
+    sellerContact: {type: String, required: true},
+    buyerContact: {type: String, required: true},
     askPrice: {type: Number, required: true},
     bidPrice: {type: Number, required: true},
     state: {

@@ -170,8 +170,8 @@ export const listTrades = (req: Request, res: Response) => {
         });
     } else {
         Trade.find( { $or: [ 
-            { seller: req.query.userId },
-            { buyer: req.query.userId }
+            { sellerId: req.query.userId },
+            { buyerId: req.query.userId }
          ] }, (err, trades) => {
             if (err) {
                 logger.error("[Method:listTrades][Error]: ", err);

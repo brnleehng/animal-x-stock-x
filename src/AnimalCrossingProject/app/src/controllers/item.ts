@@ -168,7 +168,7 @@ export const listItems = (req: Request, res: Response) => {
             logger.error("SHIT3");
             res.status(200);
             return res.json(item);
-        }).limit(10);
+        }).limit(100);
     } else {
         Item.find( { name: { $regex: `.*${req.query.search}.*` } }, (err, item) => {
             if (err) {

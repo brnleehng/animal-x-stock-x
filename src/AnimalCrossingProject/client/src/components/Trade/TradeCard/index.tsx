@@ -69,8 +69,12 @@ export class TradeCard extends React.Component<Trade, State> {
             <React.Fragment>
                 <ListGroup.Item><Image src={this.state.itemImage}/></ListGroup.Item>
                 <ListGroup.Item>Item: {this.state.itemName}</ListGroup.Item>
-                <ListGroup.Item>Seller: {this.props.seller}</ListGroup.Item>
-                <ListGroup.Item>Buyer: {this.props.buyer}</ListGroup.Item>
+                <ListGroup.Item>Matched Price: {this.props.bidPrice}</ListGroup.Item>
+                <ListGroup.Item>SellerName: {this.props.sellerName}</ListGroup.Item>
+                <ListGroup.Item>SellerContact: {this.props.sellerContact}</ListGroup.Item>
+                <ListGroup.Item>SellerName: {this.props.buyerName}</ListGroup.Item>
+                <ListGroup.Item>SellerContact: {this.props.buyerContact}</ListGroup.Item>
+
                 <ListGroup.Item>
                     <Link to={{
                         pathname: `${link}`,

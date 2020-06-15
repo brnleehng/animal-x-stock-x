@@ -9,7 +9,8 @@ export type UserDocument = mongoose.Document & {
     password: string;
     passwordResetToken: string;
     passwordResetExpires: Date;
-
+    contact: string;
+    
     username: string;
     nintendoSwitchCode: string;
     preferredTimezone: string;
@@ -48,7 +49,7 @@ const userSchema = new mongoose.Schema({
     password: String,
     passwordResetToken: String,
     passwordResetExpires: Date,
-
+    contact: String,
     username: { type: String, unique: true},
     nintendoSwitchCode: String,
     preferredTimezone: String,
