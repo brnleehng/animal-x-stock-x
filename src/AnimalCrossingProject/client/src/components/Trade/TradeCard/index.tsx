@@ -19,13 +19,14 @@ export class TradeCard extends React.Component<Trade, State> {
             itemImage: "",
             itemColors: []
         }
-        console.log(props);
+        // console.log(props);
     }
 
     componentDidMount() {
+        console.log(this.props);
         this.getItem(this.props.itemId).then(data => {
             let aVariant = null;
-            console.log(data);
+            // console.log(data);
             for (const variant of data.variants) {
                 if (variant.uniqueEntryId === this.props.uniqueEntryId) {
                     aVariant = variant;

@@ -144,9 +144,9 @@ export const updateItem = (req: Request, res: Response) => {
 export const getItem = (req: Request, res: Response) => {
     Item.findById({ _id: req.params.itemId }, (err, item) => {
         if (err) {
-            res.send(err);
+            return res.json(err);
         }
-        res.json(item);
+        return res.json(item);
     });
 };
 
