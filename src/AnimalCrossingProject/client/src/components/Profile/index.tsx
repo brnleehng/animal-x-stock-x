@@ -53,12 +53,10 @@ export class Profile extends React.Component<Props, State> {
 
     componentDidMount() {
         this.getTrades().then((data: any) => {
-            // console.log(data);
             this.setState({ trades: data });
         });
 
         this.getOrders().then((data: any) => {
-            console.log(data)
             this.setState({ orders: data[0].orders });
         });
     }
@@ -82,7 +80,6 @@ export class Profile extends React.Component<Props, State> {
 
     async getTrades() {
         const userId = JSON.parse(localStorage.getItem("user")!)._id;
-        console.log(userId);
         const res = await fetch(`/api/v1/trades?userId=${userId}`, {
             method: 'GET',
             mode: "cors",
@@ -99,10 +96,8 @@ export class Profile extends React.Component<Props, State> {
     }
 
     render() {
-        console.log(`ORDERS: ${this.state.orders}`);
         const tradeList = this.state.trades.map((x) => {
             let payload = x as Trade;
-            console.log(`PRICE: ${payload.bidPrice}`);
             return (
                 <ListGroup.Item className="mt-2 mb-2 mx-auto d-flex align-items-stretch">
                     <TradeCard {...payload} />
@@ -112,7 +107,6 @@ export class Profile extends React.Component<Props, State> {
 
         const orderList = this.state.orders.map((x) => {
             let payload = x;
-            console.log(`PRICE: ${payload.price}`);
             return (
                 <ListGroup.Item className="mt-2 mb-2 mx-auto d-flex align-items-stretch">
                     <OrderCard {...payload} />
@@ -121,7 +115,6 @@ export class Profile extends React.Component<Props, State> {
         });
 
         const username = JSON.parse(localStorage.getItem("user")!).username;
-        // console.log(this.state.trades)
         return (
             <React.Fragment>
                 <p> Username: {username} </p>

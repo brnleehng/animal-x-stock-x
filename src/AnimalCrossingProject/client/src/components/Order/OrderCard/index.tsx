@@ -22,13 +22,11 @@ export class OrderCard extends React.Component<Order, State> {
             itemImage: "",
             itemColors: []
         }
-        console.log(`PROPS: ${props.orderType}`);
     }
 
     componentDidMount() {
         this.getItem(this.props.itemId).then(data => {
             let aVariant = null;
-            console.log(data);
             for (const variant of data.variants) {
                 if (variant.uniqueEntryId === this.props.uniqueEntryId) {
                     aVariant = variant;
@@ -51,7 +49,6 @@ export class OrderCard extends React.Component<Order, State> {
     }
 
     async getItem(itemId: string) {
-        console.log(`/api/v1/items/${itemId}`);
         const res = await fetch(`/api/v1/items/${itemId}`, {
             method: 'GET',
             mode: "cors",
