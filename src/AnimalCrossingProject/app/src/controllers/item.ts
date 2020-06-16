@@ -144,9 +144,9 @@ export const updateItem = (req: Request, res: Response) => {
 export const getItem = (req: Request, res: Response) => {
     Item.findById({ _id: req.params.itemId }, (err, item) => {
         if (err) {
-            res.send(err);
+            return res.json(err);
         }
-        res.json(item);
+        return res.json(item);
     });
 };
 
@@ -168,7 +168,7 @@ export const listItems = (req: Request, res: Response) => {
             logger.error("SHIT3");
             res.status(200);
             return res.json(item);
-        }).limit(10);
+        }).limit(100);
     } else {
         Item.find( { name: { $regex: `.*${req.query.search}.*` } }, (err, item) => {
             if (err) {

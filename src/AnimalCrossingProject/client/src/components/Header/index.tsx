@@ -2,10 +2,6 @@ import React from "react";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { BrowserRouter, Route, Link, Switch } from 'react-router-dom';
-import Form from 'react-bootstrap/Form';
-import Button from 'react-bootstrap/Button';
-import FormControl from 'react-bootstrap/FormControl';
 import { Redirect } from 'react-router';
 
 
@@ -69,8 +65,11 @@ export class Header extends React.Component<Props, State> {
                         null :
                         <Nav.Link href="/signup">Create Account</Nav.Link>
                     }
-                    { localStorage.getItem("user") ? 
-                        <Nav.Link onClick={(e: any) => this.submitLogout(e).then(data => console.log(data))}>Logout</Nav.Link> :
+                    { localStorage.getItem("user") ?
+                        <React.Fragment>
+                        <Nav.Link href="/profile">Profile</Nav.Link>
+                        <Nav.Link onClick={(e: any) => this.submitLogout(e).then(data => console.log(data))}>Logout</Nav.Link>
+                        </React.Fragment> :
                         <Nav.Link href="/login">Login</Nav.Link>
                     }
                 </Nav>

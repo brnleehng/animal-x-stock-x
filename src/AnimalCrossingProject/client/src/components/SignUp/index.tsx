@@ -11,6 +11,7 @@ interface Props {
 interface State  {
   username: string,
   email: string,
+  discord: string,
   password: string,
   confirmPassword: string,
   signupSuccess: boolean,
@@ -27,6 +28,7 @@ export class SignUp extends React.Component<Props, State> {
         this.state = {
             username: "",
             email: "",
+            discord: "",
             password: "",
             confirmPassword: "",
             signupSuccess: false,
@@ -52,6 +54,10 @@ export class SignUp extends React.Component<Props, State> {
             this.setState({ email: e.target.value });
         }
 
+        if (e.target.name === "discord") {
+            this.setState({ discord: e.target.value });
+        }
+
         if (e.target.name === "password") {
             this.setState({ password: e.target.value });
         }
@@ -67,9 +73,11 @@ export class SignUp extends React.Component<Props, State> {
         const data = {
             username: this.state.username,
             email: this.state.email,
+            contact: this.state.discord,
             password: this.state.password,
             confirmPassword: this.state.confirmPassword
         };
+        console.log(data);
         const res = await fetch("http://localhost:3000/signup", {
             method: 'POST',
             mode: "cors",
@@ -150,6 +158,15 @@ export class SignUp extends React.Component<Props, State> {
                     {this.state.emailError}
                 </p>
             </Form.Group>
+
+            <Form.Group controlId="formBasicContact">
+                <Form.Label>Public Contact</Form.Label>
+                <Form.Control name="discord" type="text" placeholder="Enter public contact" onChange={(e) => this.onChange(e)} disabled={this.state.signupSuccess} required />
+                <Form.Text className="text-muted">
+                    Traders will contact you using this contact.
+                </Form.Text>
+            </Form.Group>
+        
         
             <Form.Group controlId="formBasicPassword">
                 <Form.Label>Password</Form.Label>

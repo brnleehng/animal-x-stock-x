@@ -14,6 +14,7 @@ import { Order, OrderDocument } from "../models/Order";
 import logger from "../util/logger";
 import { Trade, TradeDocument } from "../models/Trade";
 import { priceTimeSort } from "../util/sort";
+import { getContact } from "./contact";
 /**
  * GET /login
  * Login page.
@@ -99,6 +100,7 @@ export const getSignup = (req: Request, res: Response) => {
 export const postSignup = async (req: Request, res: Response, next: NextFunction) => {
     await check("username", "Username cannot be empty").not().isEmpty().run(req);
     await check("email", "Email is not valid").isEmail().run(req);
+    await check("contact", "Contact cannot be empty").not().isEmpty().run(req);
     await check("password", "Password must be at least 4 characters long").isLength({ min: 4 }).run(req);
     await check("confirmPassword", "Passwords do not match").equals(req.body.password).run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
@@ -115,6 +117,7 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
     const user = new User({
         username: req.body.username,
         email: req.body.email,
+        contact: req.body.contact,
         password: req.body.password
     });
 
@@ -506,7 +509,7 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
     const asks: OrderDocument[] = [];
     const bids: OrderDocument[] = [];
     const tradeBatch: TradeDocument[] = [];
-    
+
     const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
         if (err) {
             response.status(500);
@@ -525,17 +528,26 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
         asks.sort(priceTimeSort(true));
         bids.sort(priceTimeSort(false));
 
+        console.log(`ASKS: ${asks}, LENGTH: ${asks.length}`);
+        console.log(`BIDS: ${bids}, LENGTH: ${bids.length}`);
+
         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
             const ask = asks.shift();
             const bid = bids.shift();
             const trade = new Trade();
-            trade.buyer = bid.userId;
-            trade.seller = ask.userId;
-            trade.bidId = bid._id;
+            trade.sellerId = ask.userId;
+            trade.buyerId = bid.userId;
             trade.askId = ask._id;
+            trade.bidId = bid._id;
+            trade.sellerName = "";
+            trade.buyerName = "";
+            trade.sellerContact = "";
+            trade.buyerContact = "";
             trade.state = "Active";
             trade.askPrice = ask.price;
             trade.bidPrice = bid.price;
+            trade.itemId = itemId;
+            trade.uniqueEntryId = uniqueEntryId;
             tradeBatch.push(trade);
         }
         
@@ -587,82 +599,93 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
                     return;
             }
 
-            logger.info("Saving trades...");
-            for (const trade of tradeBatch) {
-                trade.save({ session });
-            }
+           
 
             logger.info("Deleting matched orders...");
 
             for (const trade of tradeBatch) {
                 // Create trades
-                const userHasAsk = await User.findOne({ _id: trade.seller, "orders._id": trade.askId  }, null, { session } );
-                const userHasBid = await User.findOne({ _id: trade.buyer, "orders._id": trade.bidId  }, null, { session } );
-                const itemHasAsk = await Item.findOne({ _id: itemId, "orders._id": trade.askId  }, null, { session } );
-                const itemHasBid = await Item.findOne({ _id: itemId, "orders._id": trade.bidId  }, null, { session } );
-                if (userHasAsk === null) {
+                const userAsk = await User.findOne({ _id: trade.sellerId, "orders._id": trade.askId  }, null, { session } );
+                const userBid = await User.findOne({ _id: trade.buyerId, "orders._id": trade.bidId  }, null, { session } );
+                const itemAsk = await Item.findOne({ _id: itemId, "orders._id": trade.askId  }, null, { session } );
+                const itemBid = await Item.findOne({ _id: itemId, "orders._id": trade.bidId  }, null, { session } );
+                if (userAsk === null) {
                     await session.abortTransaction();
-                    logger.error("User " + trade.seller + " doesn't have ask " + trade.askId);
+                    logger.error("User " + trade.sellerId + " doesn't have ask " + trade.askId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 } 
-                if (userHasBid === null) {
+                if (userBid === null) {
                     await session.abortTransaction();
-                    logger.error("User " + trade.buyer + " doesn't have bid " + trade.bidId);
+                    logger.error("User " + trade.buyerId + " doesn't have bid " + trade.bidId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 } 
-                if (itemHasAsk === null) {
+                if (itemAsk === null) {
                     await session.abortTransaction();
                     logger.error("Item " + itemId + " doesn't have order " + trade.askId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
-                if (itemHasBid === null) {
+                if (itemBid === null) {
                     await session.abortTransaction();
                     logger.error("Item " + itemId + " doesn't have order " + trade.bidId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+                logger.info(`USERASK: ${userAsk}`);
+
+                trade.sellerName = userAsk.username;
+                trade.buyerName = userBid.username;
+                trade.sellerContact = userAsk.contact;
+                trade.buyerContact = userBid.contact;
+
                 // Update order state
                 const sellerUpdateResults = await User.updateOne(
-                    { _id: trade.seller, "orders._id": trade.askId },
+                    { _id: trade.sellerId, "orders._id": trade.askId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 const buyerUpdateResults = await User.updateOne(
-                    { _id: trade.buyer, "orders._id": trade.bidId },
+                    { _id: trade.buyerId, "orders._id": trade.bidId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 const itemAskUpdateResults = await Item.updateOne(
                     { _id: itemId, "orders._id": trade.askId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 const itemBidUpdateResults = await Item.updateOne(
                     { _id: itemId, "orders._id": trade.bidId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 if (sellerUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Seller trade could not be updated.");
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+
                 if (buyerUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Buyer trade could not be updated.");
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+
                 if (itemAskUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Item ask could not be updated.");
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+
                 if (itemBidUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Item bid could not be updated.");
@@ -670,7 +693,14 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
                     return;
                 }
 
+
             }
+
+            logger.info("Saving trades...");
+            // for (const trade of tradeBatch) {
+            //     trade.save({ session });
+            // }
+            await Trade.insertMany(tradeBatch, { session });
 
         }, transactionOptions);
         if (transactionResults !== null) {
