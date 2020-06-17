@@ -20,6 +20,8 @@ import { getContact } from "./contact";
  * Login page.
  */
 export const getLogin = (req: Request, res: Response) => {
+    logger.info("[Method:getLogin][Info]");
+
     if (req.user) {
         return res.redirect("/");
     }
@@ -33,6 +35,8 @@ export const getLogin = (req: Request, res: Response) => {
  * Sign in using email and password.
  */
 export const postLogin = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postLogin][Info]", req.body);
+
     await check("email", "Email is not valid").isEmail().run(req);
     await check("password", "Password cannot be blank").isLength({min: 1}).run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
@@ -62,11 +66,8 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
                 logger.error("[Method:postLogin][Error]: ", err);
                 return next(err); 
             }
-
-            // req.flash("success", { msg: "Success! You are logged in." });
             res.status(200);
-            res.json({ Message: "Success! You are logged in.", user: user });
-            // res.redirect(req.session.returnTo || "/");
+            return res.json({ Message: "Success! You are logged in.", user: user });
         });
     })(req, res, next);
 };
@@ -76,6 +77,8 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
  * Log out.
  */
 export const logout = (req: Request, res: Response) => {
+    logger.info("[Method:getLogout][Info]");
+
     req.logout();
     res.redirect("/");
 };
@@ -85,6 +88,8 @@ export const logout = (req: Request, res: Response) => {
  * Signup page.
  */
 export const getSignup = (req: Request, res: Response) => {
+    logger.info("[Method:getSignup][Info]");
+
     if (req.user) {
         return res.redirect("/");
     }
@@ -98,6 +103,8 @@ export const getSignup = (req: Request, res: Response) => {
  * Create a new local account.
  */
 export const postSignup = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postSignup][Info]", req.body);
+
     await check("username", "Username cannot be empty").not().isEmpty().run(req);
     await check("email", "Email is not valid").isEmail().run(req);
     await check("contact", "Contact cannot be empty").not().isEmpty().run(req);
@@ -139,7 +146,6 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
                 }
                 res.status(200);
                 res.json({ Message: "Success! You are signued up.", user: user });
-                // res.redirect("/");
             });
         });
     });
@@ -150,6 +156,8 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
  * Profile page.
  */
 export const getAccount = (req: Request, res: Response) => {
+    logger.info("[Method:getAccount][Info]");
+
     res.render("account/profile", {
         title: "Account Management"
     });
@@ -160,6 +168,8 @@ export const getAccount = (req: Request, res: Response) => {
  * Update profile information.
  */
 export const postUpdateProfile = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postUpdateProfile][Info]", req.body);
+
     await check("email", "Please enter a valid email address.").isEmail().run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
     await sanitize("email").normalizeEmail({ gmail_remove_dots: false }).run(req);
@@ -198,6 +208,8 @@ export const postUpdateProfile = async (req: Request, res: Response, next: NextF
  * Update current password.
  */
 export const postUpdatePassword = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postUpdatePassword][Info]", req.body);
+
     await check("password", "Password must be at least 4 characters long").isLength({ min: 4 }).run(req);
     await check("confirmPassword", "Passwords do not match").equals(req.body.password).run(req);
 
@@ -225,6 +237,8 @@ export const postUpdatePassword = async (req: Request, res: Response, next: Next
  * Delete user account.
  */
 export const postDeleteAccount = (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postDeleteAccount][Info]", req.user);
+
     const user = req.user as UserDocument;
     User.remove({ _id: user.id }, (err) => {
         if (err) { return next(err); }
@@ -239,6 +253,8 @@ export const postDeleteAccount = (req: Request, res: Response, next: NextFunctio
  * Unlink OAuth provider.
  */
 export const getOauthUnlink = (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:getOAuth][Info]", req.params.provider);
+
     const provider = req.params.provider;
     const user = req.user as UserDocument;
     User.findById(user.id, (err, user: any) => {
@@ -258,6 +274,8 @@ export const getOauthUnlink = (req: Request, res: Response, next: NextFunction) 
  * Reset Password page.
  */
 export const getReset = (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:getReset][Info]", req.params.token);
+
     if (req.isAuthenticated()) {
         return res.redirect("/");
     }
@@ -274,9 +292,6 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
             }
             res.status(200);
             return res.json({ msg: "Password reset token is valid." });
-            // res.render("account/reset", {
-            //     title: "Password Reset"
-            // });
         });
 };
 
@@ -285,6 +300,8 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
  * Process the reset password request.
  */
 export const postReset = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postReset][Info]", req.params.token);
+
     await check("password", "Password must be at least 4 characters long.").isLength({ min: 4 }).run(req);
     await check("confirm", "Passwords must match.").equals(req.body.password).run(req);
 
@@ -351,6 +368,8 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
  * Forgot Password page.
  */
 export const getForgot = (req: Request, res: Response) => {
+    logger.info("[Method:getForgot][Info]");
+
     if (req.isAuthenticated()) {
         return res.redirect("/");
     }
@@ -364,6 +383,8 @@ export const getForgot = (req: Request, res: Response) => {
  * Create a random token, then the send user an email with a reset link.
  */
 export const postForgot = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postForgot][Info]", req.body);
+
     await check("email", "Please enter a valid email address.").isEmail().run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
     await sanitize("email").normalizeEmail({ gmail_remove_dots: false }).run(req);
@@ -497,7 +518,8 @@ export const getAccountProfile = (req: Request, res: Response) => {
  * TODO: Will get an uncaught error if itemId doesn't map to an item
  * Catches an error? TypeError: Cannot read property 'get' of undefined
  */
-export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
+const matchOrders = async (itemId: string, uniqueEntryId: string) => {
+    logger.info("[Method:matchOrder][Info]", itemId, uniqueEntryId);
     // Create collection if it doesn't exist. MongoDB cannot create collections for transactions.
     mongoose.connection.db.listCollections({name: "trades"})
     .next(function(err, collinfo) {
@@ -722,13 +744,15 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
  * Get all order via API
  */
 export const listOrders = async (req: Request, res: Response) => {
+    logger.info("[Method:listOders][Info]", req.params.accountId);
+
     User.find({ _id: req.params.accountId }, { "_id": 0, "orders": 1 }, (err, orders) => {
         if (err) {
             res.status(500);
-            res.send(err);
+            return res.send(err);
         }
         res.status(200);
-        res.json(orders);
+        return res.json(orders);
     });
 };
 
@@ -737,6 +761,8 @@ export const listOrders = async (req: Request, res: Response) => {
  * Get order via API
  */
 export const getOrder = async (req: Request, res: Response) => {
+    logger.info("[Method:getOrder][Info]", req.params.orderId);
+
     const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
@@ -797,6 +823,7 @@ export const getOrder = async (req: Request, res: Response) => {
  */
 // CreateTimes will differ between Order made in User and Item collections.. why?
 export const placeOrder = async (req: Request, res: Response) => {
+    logger.info("[Method:placeOrder][Info]", req.params.accountId);
 
     await check("accountId", "Property 'accountId' cannot be empty").not().isEmpty().run(req);
     await check("itemId", "Property 'itemId' cannot be empty").not().isEmpty().run(req);
@@ -916,6 +943,7 @@ export const placeOrder = async (req: Request, res: Response) => {
  * Update order via API
  */
 export const updateOrder = async (req: Request, res: Response) => {
+    logger.info("[Method:updateOrder][Info]", req.params.orderId);
 
     await check("accountId", "Property 'accountId' cannot be empty").not().isEmpty().run(req);
     await check("orderId", "Property 'orderId' cannot be empty").not().isEmpty().run(req);
