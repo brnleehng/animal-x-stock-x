@@ -50,7 +50,7 @@ export class Login extends React.Component<Props, State> {
         password: this.state.password,
     };
 
-    const res = await fetch("http://localhost:3000/login", {
+    const res = await fetch("/login", {
         method: 'POST',
         mode: "cors",
         cache: "no-cache",

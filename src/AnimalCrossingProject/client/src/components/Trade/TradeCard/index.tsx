@@ -1,5 +1,4 @@
 import * as React from "react";
-import Card from 'react-bootstrap/Card';
 import { Link } from 'react-router-dom';
 import { Trade } from '../../Profile';
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -46,7 +45,7 @@ export class TradeCard extends React.Component<Trade, State> {
     }
 
     async getItem(itemId: string) {
-        const res = await fetch(`http://localhost:3000/api/v1/items/${itemId}`, {
+        const res = await fetch(`/api/v1/items/${itemId}`, {
             method: 'GET',
             mode: "cors",
             cache: "no-cache",

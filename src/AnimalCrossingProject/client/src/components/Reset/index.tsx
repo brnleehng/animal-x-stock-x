@@ -51,7 +51,7 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
     }
 
     async checkToken() {
-        const res = await fetch(`http://localhost:3000/reset/${this.state.token}`, {
+        const res = await fetch(`/reset/${this.state.token}`, {
         method: 'GET',
         mode: "cors",
         cache: "no-cache",
@@ -82,7 +82,7 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
             password: this.state.password,
             confirm: this.state.confirm,
         };
-        const res = await fetch(`http://localhost:3000/reset/${this.state.token}`, {
+        const res = await fetch(`/reset/${this.state.token}`, {
             method: 'POST',
             mode: "cors",
             cache: "no-cache",
