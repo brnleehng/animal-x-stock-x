@@ -1,5 +1,4 @@
 import * as React from "react";
-import Card from 'react-bootstrap/Card';
 import { Link } from 'react-router-dom';
 import { Order } from '../../Profile';
 import ListGroup from 'react-bootstrap/ListGroup';

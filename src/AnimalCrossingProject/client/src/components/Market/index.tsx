@@ -128,7 +128,7 @@ export class Market extends React.Component<MarketProps, MarketState>{
 
     componentDidMount() {
         const flatData: any[] = [];
-        this.listItems(`http://localhost:3000/api/v1/items?search=${this.state.keyword}`).then(data => {
+        this.listItems(`/api/v1/items?search=${this.state.keyword}`).then(data => {
             for (const datum of data) {
                 for (const variant of datum.variants) {
                     const result = {...variant, ...datum};
@@ -154,7 +154,7 @@ export class Market extends React.Component<MarketProps, MarketState>{
     submitSearch(e: any) {
         e.preventDefault();
         const flatData: any[] = [];
-        this.listItems(`http://localhost:3000/api/v1/items?search=${this.state.keyword}`).then(data => {
+        this.listItems(`/api/v1/items?search=${this.state.keyword}`).then(data => {
             for (const datum of data) {
                 for (const variant of datum.variants) {
                     const result = {...variant, ...datum};

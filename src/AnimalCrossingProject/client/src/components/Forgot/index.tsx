@@ -40,7 +40,7 @@ export class Forgot extends React.Component<Props, State> {
             email: this.state.email,
         };
     
-        const res = await fetch("http://localhost:3000/forgot", {
+        const res = await fetch("/forgot", {
             method: 'POST',
             mode: "cors",
             cache: "no-cache",

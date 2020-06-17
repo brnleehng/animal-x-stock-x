@@ -78,7 +78,7 @@ export class SignUp extends React.Component<Props, State> {
             confirmPassword: this.state.confirmPassword
         };
         console.log(data);
-        const res = await fetch("http://localhost:3000/signup", {
+        const res = await fetch("/signup", {
             method: 'POST',
             mode: "cors",
             cache: "no-cache",

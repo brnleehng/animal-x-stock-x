@@ -88,14 +88,16 @@ export const createItemsBulk = async (req: Request, res: Response) => {
  * Add an item to the MongoDB.
  */
 export const createItem = async (req: Request, res: Response) => {
+    logger.info("[Method:createItem][Info]", req.body);
+
     const itemCreateParameter = new Item(req.body);
 
     itemCreateParameter.save(function (err, item) {
         if (err) {
-            res.send(err);
+            return res.send(err);
         }
 
-        res.json(item);
+        return res.json(item);
     });
 };
 
@@ -104,19 +106,21 @@ export const createItem = async (req: Request, res: Response) => {
  * Delete an item to the MongoDB.
  */
 export const deleteItem = (req: Request, res: Response) => {
+    logger.info("[Method:deleteItem][Info]", req.params.itemId);
+
     Item.remove(
         {
             _id: req.params.itemId
         },
         (err) => {
             if (err) {
-                res.send(err);
+                return res.send(err);
             }
 
         }
     );
 
-    res.json({ message: "Item successfully deleted" });
+    return res.json({ message: "Item successfully deleted" });
 };
 
 /**
@@ -124,16 +128,18 @@ export const deleteItem = (req: Request, res: Response) => {
  * Update an item from the MongoDB.
  */
 export const updateItem = (req: Request, res: Response) => {
+    logger.info("[Method:updateItem][Info]", req.params.itemId);
+
     if (req.user) {
         return res.redirect("/");
     }
 
     Item.findOneAndUpdate({ _id: req.params.itemId }, req.body, { new: true }, (err, item) => {
         if (err) {
-            res.send(err);
+            return res.send(err);
         }
 
-        res.json(item);
+        return res.json(item);
     });
 };
 
@@ -142,6 +148,8 @@ export const updateItem = (req: Request, res: Response) => {
  * Get an item to the MongoDB.
  */
 export const getItem = (req: Request, res: Response) => {
+    logger.info("[Method:getItem][Info]", req.params.itemId);
+
     Item.findById({ _id: req.params.itemId }, (err, item) => {
         if (err) {
             return res.json(err);
@@ -155,28 +163,26 @@ export const getItem = (req: Request, res: Response) => {
  * List items in a MongoDB.
  */
 export const listItems = (req: Request, res: Response) => {
+    logger.info("[Method:listItems][Info]", req.query.search);
+
     if (req.user) {
         return res.redirect("/");
     }
     if (!req.query.search) {    
         Item.find({}, (err, item) => {
             if (err) {
-                logger.error("SHIT4");
                 res.status(500);
                 return res.send(err);
             }
-            logger.error("SHIT3");
             res.status(200);
             return res.json(item);
         }).limit(100);
     } else {
         Item.find( { name: { $regex: `.*${req.query.search}.*` } }, (err, item) => {
             if (err) {
-                logger.error("SHIT1");
                 res.status(500);
                 return res.send(err);
             }
-            logger.error("SHIT2");
             res.status(200);
             return res.json(item);
         });
@@ -188,12 +194,14 @@ export const listItems = (req: Request, res: Response) => {
  * List orders for an item
  */
 export const listItemOrders = (req: Request, res: Response) => {
+    logger.info("[Method:listItemOrders][Info]", req.params.itemId);
+
     Item.find({ _id: req.params.itemId }, { "_id": 0, "orders": 1 }, (err, orders) => {
         if (err) {
             res.status(500);
-            res.send(err);
+            return res.send(err);
         }
         res.status(200);
-        res.json(orders);
+        return res.json(orders);
     });
 };

@@ -53,7 +53,7 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
     }
 
     componentDidMount() {
-        this.getOrders(`http://localhost:3000/api/v1/items/${(this.props.location.state as any).itemId}/orders`).then(data => this.setState({ 
+        this.getOrders(`/api/v1/items/${(this.props.location.state as any).itemId}/orders`).then(data => this.setState({ 
             asks: data[0].orders.sort(priceTimeSort(true)).filter((order: any) => order.orderType === "Ask" && order.state === "Active" && order.uniqueEntryId === (this.props.location.state as any).itemUniqueEntryId),
             bids: data[0].orders.sort(priceTimeSort(false)).filter((order: any) => order.orderType === "Bid" && order.state === "Active" && order.uniqueEntryId === (this.props.location.state as any).itemUniqueEntryId)
          }));
@@ -120,7 +120,7 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             return;
         }
 
-        const res = await fetch(`http://localhost:3000/api/v1/accounts/${userId}/orders`, {
+        const res = await fetch(`/api/v1/accounts/${userId}/orders`, {
             method: 'POST',
             mode: "cors",
             cache: "no-cache",
