@@ -25,7 +25,7 @@ export class Header extends React.Component<Props, State> {
         e.preventDefault();
         console.log("LOGOUT");
     
-        const res = await fetch("http://localhost:3000/logout", {
+        const res = await fetch("/logout", {
             method: 'GET',
             mode: "cors",
             cache: "no-cache",
@@ -56,7 +56,6 @@ export class Header extends React.Component<Props, State> {
                     <Nav className="mr-auto">
                         <Nav.Link href="/market">Market</Nav.Link>
                         <Nav.Link href="/contact">Contact</Nav.Link>
-                        <Nav.Link href="/itemDetail">Item Detail</Nav.Link>
                         <Nav.Link href="/about">About</Nav.Link>
                     </Nav>
 
