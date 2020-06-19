@@ -59,7 +59,6 @@ export class OrderCard extends React.Component<Order, State> {
             redirect: "follow",
             referrerPolicy: "no-referrer",
         });
-
         return res.json();
     }
 
