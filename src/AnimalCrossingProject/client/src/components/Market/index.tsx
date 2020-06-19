@@ -122,7 +122,7 @@ export class Market extends React.Component<MarketProps, MarketState>{
             redirect: "follow",
             referrerPolicy: "no-referrer",
         });
-        console.log(res.body);
+        console.log(res);
         return res.json();
     }
 

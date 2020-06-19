@@ -57,7 +57,6 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
         }
         if (!user) {
             logger.error("[Method:postLogin][Error]: ", info.message);
-            // req.flash("errors", {msg: info.message});
             res.status(401);
             return res.json(info.message);
         }
@@ -321,8 +320,8 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
                 .exec((err, user: any) => {
                     if (err) { return next(err); }
                     if (!user) {
-                        req.flash("errors", { msg: "Password reset token is invalid or has expired." });
-                        return res.redirect("back");
+                        res.status(401);
+                        return res.json({ msg: "Password reset token is invalid or has expired." });
                     }
                     user.password = req.body.password;
                     user.passwordResetToken = undefined;
@@ -408,8 +407,8 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
             User.findOne({ email: req.body.email }, (err, user: any) => {
                 if (err) { return done(err); }
                 if (!user) {
-                    req.flash("errors", { msg: "Account with that email address does not exist." });
-                    return res.redirect("/forgot");
+                    res.status(404);
+                    return res.json({ msg: "Account with that email address does not exist." });
                 }
                 user.passwordResetToken = token;
                 user.passwordResetExpires = Date.now() + 3600000; // 1 hour
