@@ -55,9 +55,7 @@ export class Forgot extends React.Component<Props, State> {
         });
 
         if (!res.ok) {
-            console.dir(res.status);
             this.setState({ resetInfo: "Could not send password reset link to given email." });
-            
         }
 
         if (res.ok) {
