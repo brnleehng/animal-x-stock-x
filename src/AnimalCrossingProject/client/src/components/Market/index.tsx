@@ -110,25 +110,25 @@ export class Market extends React.Component<MarketProps, MarketState>{
         };
     }
 
-    async listItems(url: string) {
-        const res = await fetch(url, {
+    async listItems() {
+        const res = await fetch(`http://localhost:3000/api/v1/items?search=${this.state.keyword}`, {
             method: 'GET',
             mode: "cors",
             cache: "no-cache",
             credentials: "same-origin",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",
         });
-
+        console.log(res.body);
         return res.json();
     }
 
     componentDidMount() {
         const flatData: any[] = [];
-        this.listItems(`/api/v1/items?search=${this.state.keyword}`).then(data => {
+        this.listItems().then(data => {
             for (const datum of data) {
                 for (const variant of datum.variants) {
                     const result = {...variant, ...datum};
@@ -154,7 +154,7 @@ export class Market extends React.Component<MarketProps, MarketState>{
     submitSearch(e: any) {
         e.preventDefault();
         const flatData: any[] = [];
-        this.listItems(`/api/v1/items?search=${this.state.keyword}`).then(data => {
+        this.listItems().then(data => {
             for (const datum of data) {
                 for (const variant of datum.variants) {
                     const result = {...variant, ...datum};
