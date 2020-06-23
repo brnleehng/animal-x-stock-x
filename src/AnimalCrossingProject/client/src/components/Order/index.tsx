@@ -73,7 +73,6 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             credentials: "same-origin",
             headers: {
                 'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",
@@ -127,7 +126,6 @@ export class Order extends React.Component<Props & RouteComponentProps, State> {
             credentials: "same-origin",
             headers: {
                 'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",

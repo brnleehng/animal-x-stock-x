@@ -58,7 +58,6 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
         credentials: "same-origin",
         headers: {
             'Content-Type': 'application/json'
-            // 'Content-Type': 'application/x-www-form-urlencoded',
         },
         redirect: "follow",
         referrerPolicy: "no-referrer",
@@ -89,7 +88,6 @@ export class Reset extends React.Component<Props & RouteComponentProps, State> {
             credentials: "same-origin",
             headers: {
                 'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",

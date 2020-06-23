@@ -57,17 +57,12 @@ export class Login extends React.Component<Props, State> {
         credentials: "same-origin",
         headers: {
             'Content-Type': 'application/json'
-            // 'Content-Type': 'application/x-www-form-urlencoded',
         },
         redirect: "follow",
         referrerPolicy: "no-referrer",
         body: JSON.stringify(data)
     });
 
-    // if (res.ok) {
-    //   // localStorage.setItem("user", this.state.email);
-    //   // console.log(localStorage.getItem("user"));
-    // }
     if (res.status === 401) {
       this.setState({ authError: "Wrong email or password" });
     } else if (res.ok) {

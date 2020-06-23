@@ -204,31 +204,8 @@ export class Market extends React.Component<MarketProps, MarketState>{
                         <Form.Control name="search" type="text" placeholder="Search" className="mr-sm-1" onChange={(e: any) => this.onChange(e)} onSubmit={(e: any) => this.onChange(e)}/>
                         <Button variant="outline-info" onClick={(e: any) => this.submitSearch(e)}>Search</Button>
                     </Form>
-                    {/* <Col xs={2}>
-                        <ListGroup>
-                            <ListGroup.Item>Clothing</ListGroup.Item>
-                            <ListGroup.Item>Equipments</ListGroup.Item>
-                            <ListGroup.Item>Collectibles</ListGroup.Item>
-                            <ListGroup.Item>Furniture</ListGroup.Item>
-                            <ListGroup.Item>Nature</ListGroup.Item>
-                        </ListGroup>
-                    </Col> */}
+
                     <Col xs={10}>
-                        <Row className="d-flex justify-content-end">
-                            <Col>
-                                {/* <DropdownButton id="dropdown-item-button" size="sm" title="Sort By">
-                                    <Dropdown.Item as="button">Featured</Dropdown.Item>
-                                    <Dropdown.Item as="button">Most Popular</Dropdown.Item>
-                                    <Dropdown.Item as="button">New Lowest Asks</Dropdown.Item>
-                                </DropdownButton>{' '} */}
-                                {/* <Button variant="primary" size="sm">
-                                    Gallery
-                                </Button>{' '}
-                                <Button variant="secondary" size="sm">
-                                    List
-                                </Button> */}
-                            </Col>
-                        </Row>
                         <Row>
                             {itemList}
                         </Row>
