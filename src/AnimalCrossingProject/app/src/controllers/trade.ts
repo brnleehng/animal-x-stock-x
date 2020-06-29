@@ -149,22 +149,36 @@ export const getTrade = (req: Request, res: Response) => {
 };
 
 /**
- * GET /api/v1/trades
+ * GET /api/v1/trades?userId=string
  * List trades in a MongoDB.
  */
 export const listTrades = (req: Request, res: Response) => {
-    logger.info("[Method:listTrades][Info]", req.params.id);
+    logger.info("[Method:listTrades][Info]", req.query.userId);
 
     const startTime = req.query["starttime"];
     const endTime = req.query["endtime"];
     const state = req.query["state"];
 
-    Trade.find({}, (err, trades) => {
-        if (err) {
-            logger.error("[Method:listTrades][Error]: ", err);
-            res.send(err);
-        }
-        res.status(200);
-        res.json(trades);
-    });
+    if (!req.query.userId) {
+        Trade.find({}, (err, trades) => {
+            if (err) {
+                logger.error("[Method:listTrades][Error]: ", err);
+                return res.send(err);
+            }
+            res.status(200);
+            return res.json(trades);
+        });
+    } else {
+        Trade.find( { $or: [ 
+            { sellerId: req.query.userId },
+            { buyerId: req.query.userId }
+         ] }, (err, trades) => {
+            if (err) {
+                logger.error("[Method:listTrades][Error]: ", err);
+                return res.send(err);
+            }
+            res.status(200);
+            return res.json(trades);
+        });
+    }
 };

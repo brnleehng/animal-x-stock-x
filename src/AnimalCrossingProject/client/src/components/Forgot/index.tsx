@@ -40,14 +40,13 @@ export class Forgot extends React.Component<Props, State> {
             email: this.state.email,
         };
     
-        const res = await fetch("http://localhost:3000/forgot", {
+        const res = await fetch("/forgot", {
             method: 'POST',
             mode: "cors",
             cache: "no-cache",
             credentials: "same-origin",
             headers: {
                 'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",
@@ -55,9 +54,7 @@ export class Forgot extends React.Component<Props, State> {
         });
 
         if (!res.ok) {
-            console.dir(res.status);
             this.setState({ resetInfo: "Could not send password reset link to given email." });
-            
         }
 
         if (res.ok) {

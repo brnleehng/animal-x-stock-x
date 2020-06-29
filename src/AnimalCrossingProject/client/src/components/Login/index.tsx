@@ -50,24 +50,19 @@ export class Login extends React.Component<Props, State> {
         password: this.state.password,
     };
 
-    const res = await fetch("http://localhost:3000/login", {
+    const res = await fetch("/login", {
         method: 'POST',
         mode: "cors",
         cache: "no-cache",
         credentials: "same-origin",
         headers: {
             'Content-Type': 'application/json'
-            // 'Content-Type': 'application/x-www-form-urlencoded',
         },
         redirect: "follow",
         referrerPolicy: "no-referrer",
         body: JSON.stringify(data)
     });
 
-    // if (res.ok) {
-    //   // localStorage.setItem("user", this.state.email);
-    //   // console.log(localStorage.getItem("user"));
-    // }
     if (res.status === 401) {
       this.setState({ authError: "Wrong email or password" });
     } else if (res.ok) {

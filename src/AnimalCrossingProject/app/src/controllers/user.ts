@@ -14,11 +14,14 @@ import { Order, OrderDocument } from "../models/Order";
 import logger from "../util/logger";
 import { Trade, TradeDocument } from "../models/Trade";
 import { priceTimeSort } from "../util/sort";
+import { getContact } from "./contact";
 /**
  * GET /login
  * Login page.
  */
 export const getLogin = (req: Request, res: Response) => {
+    logger.info("[Method:getLogin][Info]");
+
     if (req.user) {
         return res.redirect("/");
     }
@@ -32,6 +35,8 @@ export const getLogin = (req: Request, res: Response) => {
  * Sign in using email and password.
  */
 export const postLogin = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postLogin][Info]", req.body);
+
     await check("email", "Email is not valid").isEmail().run(req);
     await check("password", "Password cannot be blank").isLength({min: 1}).run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
@@ -52,7 +57,6 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
         }
         if (!user) {
             logger.error("[Method:postLogin][Error]: ", info.message);
-            // req.flash("errors", {msg: info.message});
             res.status(401);
             return res.json(info.message);
         }
@@ -61,11 +65,8 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
                 logger.error("[Method:postLogin][Error]: ", err);
                 return next(err); 
             }
-
-            // req.flash("success", { msg: "Success! You are logged in." });
             res.status(200);
-            res.json({ Message: "Success! You are logged in.", user: user });
-            // res.redirect(req.session.returnTo || "/");
+            return res.json({ Message: "Success! You are logged in.", user: user });
         });
     })(req, res, next);
 };
@@ -75,6 +76,8 @@ export const postLogin = async (req: Request, res: Response, next: NextFunction)
  * Log out.
  */
 export const logout = (req: Request, res: Response) => {
+    logger.info("[Method:getLogout][Info]");
+
     req.logout();
     res.redirect("/");
 };
@@ -84,6 +87,8 @@ export const logout = (req: Request, res: Response) => {
  * Signup page.
  */
 export const getSignup = (req: Request, res: Response) => {
+    logger.info("[Method:getSignup][Info]");
+
     if (req.user) {
         return res.redirect("/");
     }
@@ -97,8 +102,11 @@ export const getSignup = (req: Request, res: Response) => {
  * Create a new local account.
  */
 export const postSignup = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postSignup][Info]", req.body);
+
     await check("username", "Username cannot be empty").not().isEmpty().run(req);
     await check("email", "Email is not valid").isEmail().run(req);
+    await check("contact", "Contact cannot be empty").not().isEmpty().run(req);
     await check("password", "Password must be at least 4 characters long").isLength({ min: 4 }).run(req);
     await check("confirmPassword", "Passwords do not match").equals(req.body.password).run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
@@ -115,6 +123,7 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
     const user = new User({
         username: req.body.username,
         email: req.body.email,
+        contact: req.body.contact,
         password: req.body.password
     });
 
@@ -124,7 +133,7 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
     ]}, (err, existingUser) => {
         if (err) { return next(err); }
         if (existingUser) {
-            logger.error("[Method:postSignup][Error]: ", err);
+            logger.error("[Method:postSignup][Error]: ", existingUser);
             res.status(409);
             return res.json({Message: `[Method:postSignup][Error]: Account with username ${req.body.username} or email ${req.body.email} already exists`});
         }
@@ -136,7 +145,6 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
                 }
                 res.status(200);
                 res.json({ Message: "Success! You are signued up.", user: user });
-                res.redirect("/");
             });
         });
     });
@@ -147,6 +155,8 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
  * Profile page.
  */
 export const getAccount = (req: Request, res: Response) => {
+    logger.info("[Method:getAccount][Info]");
+
     res.render("account/profile", {
         title: "Account Management"
     });
@@ -157,6 +167,8 @@ export const getAccount = (req: Request, res: Response) => {
  * Update profile information.
  */
 export const postUpdateProfile = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postUpdateProfile][Info]", req.body);
+
     await check("email", "Please enter a valid email address.").isEmail().run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
     await sanitize("email").normalizeEmail({ gmail_remove_dots: false }).run(req);
@@ -195,6 +207,8 @@ export const postUpdateProfile = async (req: Request, res: Response, next: NextF
  * Update current password.
  */
 export const postUpdatePassword = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postUpdatePassword][Info]", req.body);
+
     await check("password", "Password must be at least 4 characters long").isLength({ min: 4 }).run(req);
     await check("confirmPassword", "Passwords do not match").equals(req.body.password).run(req);
 
@@ -222,6 +236,8 @@ export const postUpdatePassword = async (req: Request, res: Response, next: Next
  * Delete user account.
  */
 export const postDeleteAccount = (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postDeleteAccount][Info]", req.user);
+
     const user = req.user as UserDocument;
     User.remove({ _id: user.id }, (err) => {
         if (err) { return next(err); }
@@ -236,6 +252,8 @@ export const postDeleteAccount = (req: Request, res: Response, next: NextFunctio
  * Unlink OAuth provider.
  */
 export const getOauthUnlink = (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:getOAuth][Info]", req.params.provider);
+
     const provider = req.params.provider;
     const user = req.user as UserDocument;
     User.findById(user.id, (err, user: any) => {
@@ -255,6 +273,8 @@ export const getOauthUnlink = (req: Request, res: Response, next: NextFunction) 
  * Reset Password page.
  */
 export const getReset = (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:getReset][Info]", req.params.token);
+
     if (req.isAuthenticated()) {
         return res.redirect("/");
     }
@@ -271,9 +291,6 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
             }
             res.status(200);
             return res.json({ msg: "Password reset token is valid." });
-            // res.render("account/reset", {
-            //     title: "Password Reset"
-            // });
         });
 };
 
@@ -282,6 +299,8 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
  * Process the reset password request.
  */
 export const postReset = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postReset][Info]", req.params.token);
+
     await check("password", "Password must be at least 4 characters long.").isLength({ min: 4 }).run(req);
     await check("confirm", "Passwords must match.").equals(req.body.password).run(req);
 
@@ -301,8 +320,8 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
                 .exec((err, user: any) => {
                     if (err) { return next(err); }
                     if (!user) {
-                        req.flash("errors", { msg: "Password reset token is invalid or has expired." });
-                        return res.redirect("back");
+                        res.status(401);
+                        return res.json({ msg: "Password reset token is invalid or has expired." });
                     }
                     user.password = req.body.password;
                     user.passwordResetToken = undefined;
@@ -348,6 +367,8 @@ export const postReset = async (req: Request, res: Response, next: NextFunction)
  * Forgot Password page.
  */
 export const getForgot = (req: Request, res: Response) => {
+    logger.info("[Method:getForgot][Info]");
+
     if (req.isAuthenticated()) {
         return res.redirect("/");
     }
@@ -361,6 +382,8 @@ export const getForgot = (req: Request, res: Response) => {
  * Create a random token, then the send user an email with a reset link.
  */
 export const postForgot = async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("[Method:postForgot][Info]", req.body);
+
     await check("email", "Please enter a valid email address.").isEmail().run(req);
     // eslint-disable-next-line @typescript-eslint/camelcase
     await sanitize("email").normalizeEmail({ gmail_remove_dots: false }).run(req);
@@ -384,8 +407,8 @@ export const postForgot = async (req: Request, res: Response, next: NextFunction
             User.findOne({ email: req.body.email }, (err, user: any) => {
                 if (err) { return done(err); }
                 if (!user) {
-                    req.flash("errors", { msg: "Account with that email address does not exist." });
-                    return res.redirect("/forgot");
+                    res.status(404);
+                    return res.json({ msg: "Account with that email address does not exist." });
                 }
                 user.passwordResetToken = token;
                 user.passwordResetExpires = Date.now() + 3600000; // 1 hour
@@ -494,11 +517,20 @@ export const getAccountProfile = (req: Request, res: Response) => {
  * TODO: Will get an uncaught error if itemId doesn't map to an item
  * Catches an error? TypeError: Cannot read property 'get' of undefined
  */
-export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
+const matchOrders = async (itemId: string, uniqueEntryId: string) => {
+    logger.info("[Method:matchOrder][Info]", itemId, uniqueEntryId);
+    // Create collection if it doesn't exist. MongoDB cannot create collections for transactions.
+    mongoose.connection.db.listCollections({name: "trades"})
+    .next(function(err, collinfo) {
+        if (!collinfo) {
+            mongoose.connection.db.createCollection("trades");
+        }
+    });
+
     const asks: OrderDocument[] = [];
     const bids: OrderDocument[] = [];
     const tradeBatch: TradeDocument[] = [];
-    
+
     const itemOrders = await Item.findOne({ _id: itemId, "orders.uniqueEntryId": uniqueEntryId }, {"_id": 0, "orders": 1}, (err, item) => {
         if (err) {
             response.status(500);
@@ -516,18 +548,27 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
 
         asks.sort(priceTimeSort(true));
         bids.sort(priceTimeSort(false));
- 
+
+        console.log(`ASKS: ${asks}, LENGTH: ${asks.length}`);
+        console.log(`BIDS: ${bids}, LENGTH: ${bids.length}`);
+
         while (asks.length > 0 && bids.length > 0 && asks[0].price <= bids[0].price) {
             const ask = asks.shift();
             const bid = bids.shift();
             const trade = new Trade();
-            trade.buyer = bid.userId;
-            trade.seller = ask.userId;
-            trade.bidId = bid._id;
+            trade.sellerId = ask.userId;
+            trade.buyerId = bid.userId;
             trade.askId = ask._id;
+            trade.bidId = bid._id;
+            trade.sellerName = "";
+            trade.buyerName = "";
+            trade.sellerContact = "";
+            trade.buyerContact = "";
             trade.state = "Active";
             trade.askPrice = ask.price;
             trade.bidPrice = bid.price;
+            trade.itemId = itemId;
+            trade.uniqueEntryId = uniqueEntryId;
             tradeBatch.push(trade);
         }
         
@@ -579,82 +620,93 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
                     return;
             }
 
-            logger.info("Saving trades...");
-            for (const trade of tradeBatch) {
-                trade.save({ session });
-            }
+           
 
             logger.info("Deleting matched orders...");
 
             for (const trade of tradeBatch) {
                 // Create trades
-                const userHasAsk = await User.findOne({ _id: trade.seller, "orders._id": trade.askId  }, null, { session } );
-                const userHasBid = await User.findOne({ _id: trade.buyer, "orders._id": trade.bidId  }, null, { session } );
-                const itemHasAsk = await Item.findOne({ _id: itemId, "orders._id": trade.askId  }, null, { session } );
-                const itemHasBid = await Item.findOne({ _id: itemId, "orders._id": trade.bidId  }, null, { session } );
-                if (userHasAsk === null) {
+                const userAsk = await User.findOne({ _id: trade.sellerId, "orders._id": trade.askId  }, null, { session } );
+                const userBid = await User.findOne({ _id: trade.buyerId, "orders._id": trade.bidId  }, null, { session } );
+                const itemAsk = await Item.findOne({ _id: itemId, "orders._id": trade.askId  }, null, { session } );
+                const itemBid = await Item.findOne({ _id: itemId, "orders._id": trade.bidId  }, null, { session } );
+                if (userAsk === null) {
                     await session.abortTransaction();
-                    logger.error("User " + trade.seller + " doesn't have ask " + trade.askId);
+                    logger.error("User " + trade.sellerId + " doesn't have ask " + trade.askId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 } 
-                if (userHasBid === null) {
+                if (userBid === null) {
                     await session.abortTransaction();
-                    logger.error("User " + trade.buyer + " doesn't have bid " + trade.bidId);
+                    logger.error("User " + trade.buyerId + " doesn't have bid " + trade.bidId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 } 
-                if (itemHasAsk === null) {
+                if (itemAsk === null) {
                     await session.abortTransaction();
                     logger.error("Item " + itemId + " doesn't have order " + trade.askId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
-                if (itemHasBid === null) {
+                if (itemBid === null) {
                     await session.abortTransaction();
                     logger.error("Item " + itemId + " doesn't have order " + trade.bidId);
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+                logger.info(`USERASK: ${userAsk}`);
+
+                trade.sellerName = userAsk.username;
+                trade.buyerName = userBid.username;
+                trade.sellerContact = userAsk.contact;
+                trade.buyerContact = userBid.contact;
+
                 // Update order state
                 const sellerUpdateResults = await User.updateOne(
-                    { _id: trade.seller, "orders._id": trade.askId },
+                    { _id: trade.sellerId, "orders._id": trade.askId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 const buyerUpdateResults = await User.updateOne(
-                    { _id: trade.buyer, "orders._id": trade.bidId },
+                    { _id: trade.buyerId, "orders._id": trade.bidId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 const itemAskUpdateResults = await Item.updateOne(
                     { _id: itemId, "orders._id": trade.askId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 const itemBidUpdateResults = await Item.updateOne(
                     { _id: itemId, "orders._id": trade.bidId },
                     { $set: { "orders.$.state": "Completed" }, $currentDate: {"orders.$.createdTime": true } },
                     { session, multi: true }
                 );
+
                 if (sellerUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Seller trade could not be updated.");
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+
                 if (buyerUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Buyer trade could not be updated.");
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+
                 if (itemAskUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Item ask could not be updated.");
                     logger.error("Any operations that already occurred as part of this transaction will be rolled back.");
                     return;
                 }
+
                 if (itemBidUpdateResults.nModified === 0) {
                     await session.abortTransaction();
                     logger.error("Item bid could not be updated.");
@@ -662,11 +714,18 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
                     return;
                 }
 
+
             }
+
+            logger.info("Saving trades...");
+            // for (const trade of tradeBatch) {
+            //     trade.save({ session });
+            // }
+            await Trade.insertMany(tradeBatch, { session });
 
         }, transactionOptions);
         if (transactionResults !== null) {
-            logger.info("The order was successfully created.");
+            logger.info("The trade was was successfully created.");
             response.status(200);
             return response.json(tradeBatch);
         } else {
@@ -684,13 +743,15 @@ export const matchOrders = async (itemId: string, uniqueEntryId: string) => {
  * Get all order via API
  */
 export const listOrders = async (req: Request, res: Response) => {
+    logger.info("[Method:listOders][Info]", req.params.accountId);
+
     User.find({ _id: req.params.accountId }, { "_id": 0, "orders": 1 }, (err, orders) => {
         if (err) {
             res.status(500);
-            res.send(err);
+            return res.send(err);
         }
         res.status(200);
-        res.json(orders);
+        return res.json(orders);
     });
 };
 
@@ -699,6 +760,8 @@ export const listOrders = async (req: Request, res: Response) => {
  * Get order via API
  */
 export const getOrder = async (req: Request, res: Response) => {
+    logger.info("[Method:getOrder][Info]", req.params.orderId);
+
     const session = await mongoose.startSession();
 
     const transactionOptions: TransactionOptions = {
@@ -759,6 +822,7 @@ export const getOrder = async (req: Request, res: Response) => {
  */
 // CreateTimes will differ between Order made in User and Item collections.. why?
 export const placeOrder = async (req: Request, res: Response) => {
+    logger.info("[Method:placeOrder][Info]", req.params.accountId);
 
     await check("accountId", "Property 'accountId' cannot be empty").not().isEmpty().run(req);
     await check("itemId", "Property 'itemId' cannot be empty").not().isEmpty().run(req);
@@ -805,17 +869,17 @@ export const placeOrder = async (req: Request, res: Response) => {
             const userExists = await User.findOne({ _id: req.params.accountId });
             if (userExists == null) {
                 session.abortTransaction();
-                logger.error("User does not exist");
+                logger.error(`User with id: ${req.params.accountId} does not exist`);
                 res.status(404);
-                return res.json({ Message: "User does not exist" });
+                return res.json({ Message: `User with id: ${req.params.accountId} does not exist` });
             }
 
             const itemExist = await Item.findOne({ _id: req.body.itemId, "variants.uniqueEntryId": req.body.uniqueEntryId });
             if (itemExist == null) {
                 session.abortTransaction();
-                logger.error("Item does not exist");
+                logger.error(`Item with id: ${req.body.itemId} and uniqueEntryId: ${req.body.uniqueEntryId} doesn't exist`);
                 res.status(404);
-                return res.json({ Message: "Item does not exist" });
+                return res.json({ Message: `Item with id: ${req.body.itemId} and uniqueEntryId: ${req.body.uniqueEntryId} doesn't exist` });
             }
 
             const usersUpdateResults = await User.updateOne(
@@ -846,7 +910,7 @@ export const placeOrder = async (req: Request, res: Response) => {
             { $addToSet: { orders: orderCreateParameter } },
             { session }
         );
-        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the id ${req.params.itemId}.`);
+        logger.info(`${itemsUpdateResults.n} document(s) found in the Item collection with the id ${req.body.itemId}.`);
         logger.info(`${itemsUpdateResults.nModified} document(s) was/were updated to include the item order.`);
         }, transactionOptions);
 
@@ -878,6 +942,7 @@ export const placeOrder = async (req: Request, res: Response) => {
  * Update order via API
  */
 export const updateOrder = async (req: Request, res: Response) => {
+    logger.info("[Method:updateOrder][Info]", req.params.orderId);
 
     await check("accountId", "Property 'accountId' cannot be empty").not().isEmpty().run(req);
     await check("orderId", "Property 'orderId' cannot be empty").not().isEmpty().run(req);
@@ -1020,7 +1085,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
     });
 
     const userEmail = (await currentUser).email;
-    let uniqueEntryId: string = "";
+    let uniqueEntryId = "";
 
     try {
         const transactionResults = await session.withTransaction(async () => {

@@ -25,14 +25,13 @@ export class Header extends React.Component<Props, State> {
         e.preventDefault();
         console.log("LOGOUT");
     
-        const res = await fetch("http://localhost:3000/logout", {
+        const res = await fetch("/logout", {
             method: 'GET',
             mode: "cors",
             cache: "no-cache",
             credentials: "same-origin",
             headers: {
                 'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",
@@ -49,26 +48,26 @@ export class Header extends React.Component<Props, State> {
             <React.Fragment>
             {this.state.isLoggedOut ? <Redirect to="/" /> : null}
             <Navbar bg="light" expand="lg">
-            <Navbar.Brand href="/">StalkX</Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
-                <Nav className="mr-auto">
-                    <Nav.Link href="/">Home</Nav.Link>
-                    <Nav.Link href="/items">Market</Nav.Link>
-                    <Nav.Link href="/about">About</Nav.Link>
-                    <Nav.Link href="/contact">Contact</Nav.Link>
-                    <Nav.Link href="/order">Order</Nav.Link>
-                    <Nav.Link href="/itemDetail">Item Detail</Nav.Link>
-                    
-                </Nav>
+                <Navbar.Brand href="/">StalkX</Navbar.Brand>
+                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+
+                <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav className="mr-auto">
+                        <Nav.Link href="/market">Market</Nav.Link>
+                        <Nav.Link href="/contact">Contact</Nav.Link>
+                        <Nav.Link href="/about">About</Nav.Link>
+                    </Nav>
 
                 <Nav className="user-action">
                     { localStorage.getItem("user") ?
                         null :
                         <Nav.Link href="/signup">Create Account</Nav.Link>
                     }
-                    { localStorage.getItem("user") ? 
-                        <Nav.Link onClick={(e: any) => this.submitLogout(e).then(data => console.log(data))}>Logout</Nav.Link> :
+                    { localStorage.getItem("user") ?
+                        <React.Fragment>
+                        <Nav.Link href="/profile">Profile</Nav.Link>
+                        <Nav.Link onClick={(e: any) => this.submitLogout(e).then(data => console.log(data))}>Logout</Nav.Link>
+                        </React.Fragment> :
                         <Nav.Link href="/login">Login</Nav.Link>
                     }
                 </Nav>
