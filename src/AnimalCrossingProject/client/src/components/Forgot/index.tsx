@@ -47,7 +47,6 @@ export class Forgot extends React.Component<Props, State> {
             credentials: "same-origin",
             headers: {
                 'Content-Type': 'application/json'
-                // 'Content-Type': 'application/x-www-form-urlencoded',
             },
             redirect: "follow",
             referrerPolicy: "no-referrer",
